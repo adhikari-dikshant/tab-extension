@@ -1,0 +1,133 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+:root {
+    color-scheme: light dark;
+    --accent: #3b82f6;
+    --ui-opacity: 1;
+}
+
+body {
+    margin: 0;
+}
+
+/* Frosted-glass surface for anything that needs to stay legible over an arbitrary wallpaper —
+   bento cards and the command bar. --ui-opacity (30-100%) scales how solid it looks; the blur
+   keeps text readable even at the low end, where the base tint alone wouldn't be enough. */
+.glass-surface,
+.bento-card {
+    background-color: rgb(255 255 255 / calc(0.85 * var(--ui-opacity)));
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+[data-theme='dark'] .glass-surface,
+[data-theme='dark'] .bento-card {
+    background-color: rgb(23 23 23 / calc(0.85 * var(--ui-opacity)));
+}
+
+.themed-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(0 0 0 / 0.15) transparent;
+}
+
+.themed-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.themed-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.themed-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgb(0 0 0 / 0.15);
+    border-radius: 9999px;
+}
+
+.themed-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(0 0 0 / 0.3);
+}
+
+@keyframes dropdown-pop-in {
+    from {
+        opacity: 0;
+        transform: scale(0.94) translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes dropdown-pop-out {
+    from {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.94) translateY(-4px);
+    }
+}
+
+.dropdown-animate {
+    transform-origin: var(--radix-dropdown-menu-content-transform-origin);
+}
+
+.dropdown-animate[data-state='open'] {
+    animation: dropdown-pop-in 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dropdown-animate[data-state='closed'] {
+    animation: dropdown-pop-out 120ms cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* Analog clock hands: the animation runs the full rotation over exactly one clock cycle
+   (60s/3600s/43200s), and a negative animation-delay set once on mount fast-forwards it to
+   the current position — no per-second JS re-render needed to keep the hands moving. */
+@keyframes clock-hand-rotate {
+    to {
+        transform: rotateZ(360deg);
+    }
+}
+
+/* Accordion sections in Settings. */
+@keyframes accordion-down {
+    from {
+        height: 0;
+    }
+    to {
+        height: var(--radix-collapsible-content-height);
+    }
+}
+
+@keyframes accordion-up {
+    from {
+        height: var(--radix-collapsible-content-height);
+    }
+    to {
+        height: 0;
+    }
+}
+
+.accordion-content[data-state='open'] {
+    animation: accordion-down 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.accordion-content[data-state='closed'] {
+    animation: accordion-up 150ms cubic-bezier(0.4, 0, 1, 1);
+}
+
+[data-theme='dark'] .themed-scrollbar {
+    scrollbar-color: rgb(255 255 255 / 0.2) transparent;
+}
+
+[data-theme='dark'] .themed-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgb(255 255 255 / 0.2);
+}
+
+[data-theme='dark'] .themed-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(255 255 255 / 0.35);
+}

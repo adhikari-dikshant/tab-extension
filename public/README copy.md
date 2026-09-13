@@ -74,9 +74,9 @@ An icon rail along the left edge opens focused side panels without leaving the d
 ## 📸 More screenshots
 
 <p align="center">
-  <img src="public/offcanvas-recent.png" alt="Recently closed tabs and saved workspaces" width="32%">
-  <img src="public/productivity-focus.png" alt="Focus timer session" width="32%">
-  <img src="public/offcanvas-mobile.png" alt="Responsive layout on a narrow viewport" width="32%">
+  <img src="artifacts/offcanvas-recent.png" alt="Recently closed tabs and saved workspaces" width="32%">
+  <img src="artifacts/productivity-focus.png" alt="Focus timer session" width="32%">
+  <img src="artifacts/offcanvas-mobile.png" alt="Responsive layout on a narrow viewport" width="32%">
 </p>
 
 ## 📥 Installation

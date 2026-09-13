@@ -42,9 +42,9 @@ Daily Workspace replaces the browser's New Tab page with a single, organized hom
 An icon rail along the left edge opens focused side panels without leaving the dashboard:
 
 <p align="center">
-  <img src="public/offcanvas-apps.png" alt="Google Apps panel" width="32%">
-  <img src="public/offcanvas-ai-tools.png" alt="AI tools panel" width="32%">
-  <img src="public/offcanvas-settings.png" alt="Settings panel" width="32%">
+  <img src="artifacts/offcanvas-apps.png" alt="Google Apps panel" width="32%">
+  <img src="artifacts/offcanvas-ai-tools.png" alt="AI tools panel" width="32%">
+  <img src="artifacts/offcanvas-settings.png" alt="Settings panel" width="32%">
 </p>
 
 - **Bookmarks** — browse and manage your bookmarks in list or grid layout.
@@ -74,9 +74,9 @@ An icon rail along the left edge opens focused side panels without leaving the d
 ## 📸 More screenshots
 
 <p align="center">
-  <img src="public/offcanvas-recent.png" alt="Recently closed tabs and saved workspaces" width="32%">
-  <img src="public/productivity-focus.png" alt="Focus timer session" width="32%">
-  <img src="public/offcanvas-mobile.png" alt="Responsive layout on a narrow viewport" width="32%">
+  <img src="artifacts/offcanvas-recent.png" alt="Recently closed tabs and saved workspaces" width="32%">
+  <img src="artifacts/productivity-focus.png" alt="Focus timer session" width="32%">
+  <img src="artifacts/offcanvas-mobile.png" alt="Responsive layout on a narrow viewport" width="32%">
 </p>
 
 ## 📥 Installation

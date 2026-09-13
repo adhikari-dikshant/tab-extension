@@ -1,8 +1,9 @@
 import * as RadixSwitch from '@radix-ui/react-switch'
 
-export function Switch({ checked, onCheckedChange }: { checked: boolean; onCheckedChange: (checked: boolean) => void }) {
+export function Switch({ checked, onCheckedChange, label }: { checked: boolean; onCheckedChange: (checked: boolean) => void; label?: string }) {
     return (
         <RadixSwitch.Root
+            aria-label={label}
             checked={checked}
             onCheckedChange={onCheckedChange}
             className="relative h-6 w-11 shrink-0 rounded-full bg-black/15 outline-none transition-colors data-[state=checked]:bg-(--accent) dark:bg-white/15"

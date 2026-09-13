@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react'
-import { ImagePlus, Shuffle, Trash2 } from 'lucide-react'
+import { ImageSquareIcon as ImagePlus } from '@phosphor-icons/react/dist/csr/ImageSquare'
+import { ShuffleIcon as Shuffle } from '@phosphor-icons/react/dist/csr/Shuffle'
+import { TrashIcon as Trash2 } from '@phosphor-icons/react/dist/csr/Trash'
 import type { Settings } from '../lib/storage'
 
 // Wallpapers are stored inline in chrome.storage.local as a data URL (no IndexedDB layer here

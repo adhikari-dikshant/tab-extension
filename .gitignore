@@ -9,8 +9,11 @@ lerna-debug.log*
 
 node_modules
 dist
+dist-firefox
 dist-ssr
+artifacts
 *.local
+*.zip
 
 # Editor directories and files
 .vscode/*

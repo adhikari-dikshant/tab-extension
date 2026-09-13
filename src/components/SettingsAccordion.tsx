@@ -1,10 +1,14 @@
 import * as Accordion from '@radix-ui/react-accordion'
-import { ChevronUp } from 'lucide-react'
+import { CaretUpIcon as ChevronUp } from '@phosphor-icons/react/dist/csr/CaretUp'
 import type { ReactNode } from 'react'
 
 export function SettingsAccordion({ children }: { children: ReactNode }) {
     return (
-        <Accordion.Root type="multiple" className="space-y-3 text-sm">
+        <Accordion.Root
+            type="multiple"
+            defaultValue={['productivity', 'layout', 'shortcuts', 'personalization', 'clock', 'search', 'appearance', 'weather', 'privacy', 'data']}
+            className="space-y-3 text-sm"
+        >
             {children}
         </Accordion.Root>
     )

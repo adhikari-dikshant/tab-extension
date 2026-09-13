@@ -40,7 +40,7 @@ export function useStorageValue<K extends keyof StorageSchema>(
         })
 
         const unsubscribe = onStorageValueChanged(key, (newValue) => {
-            if (newValue !== undefined) setValue(withDefaults(defaultValue, newValue))
+            setValue(newValue === undefined ? defaultValue : withDefaults(defaultValue, newValue))
         })
 
         return () => {

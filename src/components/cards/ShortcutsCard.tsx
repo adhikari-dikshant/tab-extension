@@ -1,4 +1,8 @@
+import { useUndoDelete } from '../../lib/useUndoDelete'
 import { useEffect, useRef, useState, type DragEvent } from 'react'
+import { PlusIcon as Plus } from '@phosphor-icons/react/dist/csr/Plus'
+import { Pagination } from '../Pagination'
+import { Modal } from '../Modal'
 import { BentoCard } from '../BentoGrid'
 import { CardEmpty, CardSkeleton } from '../CardState'
 import { ShortcutIcon } from '../ShortcutIcon'
@@ -10,6 +14,9 @@ const MAX_SHORTCUTS = 50
 export default function ShortcutsCard() {
     const [shortcuts, setShortcuts, loading] = useStorageValue('shortcuts', [])
     const [adding, setAdding] = useState(false)
+    const [page, setPage] = useState(0)
+    const pageCount = Math.max(1, Math.ceil(shortcuts.length / 9))
+    const currentPage = Math.min(page, pageCount - 1)
     const [label, setLabel] = useState('')
     const [url, setUrl] = useState('')
     const [customIcon, setCustomIcon] = useState<string | undefined>(undefined)
@@ -75,12 +82,12 @@ export default function ShortcutsCard() {
         if (!label.trim() || !url.trim() || shortcuts.length >= MAX_SHORTCUTS) return
         const normalizedUrl = /^https?:\/\//i.test(url) ? url : `https://${url}`
         setShortcuts([...shortcuts, { id: crypto.randomUUID(), label, url: normalizedUrl, icon: customIcon }])
+        setPage(Math.floor(shortcuts.length / 9))
         setAdding(false)
     }
 
-    const remove = (id: string) => {
-        setShortcuts(shortcuts.filter((s) => s.id !== id))
-    }
+    const undoDelete = useUndoDelete()
+    const remove = (id: string) => { void undoDelete('shortcuts', id, 'Shortcut') }
 
     const onDrop = (targetId: string) => (e: DragEvent) => {
         e.preventDefault()
@@ -96,13 +103,19 @@ export default function ShortcutsCard() {
     }
 
     return (
-        <BentoCard title="Shortcuts">
+        <BentoCard
+            title="Shortcuts"
+            className="shortcuts-card"
+            action={pageCount > 1
+                ? <Pagination page={currentPage} count={pageCount} onChange={setPage} label="shortcuts" />
+                : <span className="card-meta">YOUR LAUNCHPAD</span>}
+        >
             {loading ? (
                 <CardSkeleton />
             ) : (
-                <div className="space-y-3">
-                    <div className="grid grid-cols-4 gap-3">
-                        {shortcuts.map((shortcut, index) => (
+                <div className="shortcuts-content">
+                    <div className="shortcut-grid">
+                        {shortcuts.slice(currentPage * 9, currentPage * 9 + 9).map((shortcut, index) => (
                             <div
                                 key={shortcut.id}
                                 draggable
@@ -115,7 +128,7 @@ export default function ShortcutsCard() {
                                     type="button"
                                     onClick={() => window.open(shortcut.url, '_self')}
                                     title={shortcut.label}
-                                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-black/5 dark:bg-white/10"
+                                    className="shortcut-tile"
                                 >
                                     <ShortcutIcon
                                         url={shortcut.url}
@@ -124,9 +137,9 @@ export default function ShortcutsCard() {
                                         className="h-5 w-5"
                                     />
                                 </button>
-                                {altHeld && index < 9 && (
+                                {altHeld && currentPage * 9 + index < 9 && (
                                     <span className="pointer-events-none absolute -left-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black text-[9px] font-medium text-white dark:bg-white dark:text-black">
-                                        {index + 1}
+                                        {currentPage * 9 + index + 1}
                                     </span>
                                 )}
                                 <span className="max-w-full truncate text-xs text-neutral-500 dark:text-neutral-400">
@@ -136,7 +149,7 @@ export default function ShortcutsCard() {
                                     type="button"
                                     onClick={() => remove(shortcut.id)}
                                     aria-label={`Remove ${shortcut.label}`}
-                                    className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-black/70 text-[10px] leading-none text-white group-hover:flex"
+                                    className="shortcut-remove absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-xs text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100"
                                 >
                                     ×
                                 </button>
@@ -147,9 +160,9 @@ export default function ShortcutsCard() {
                                 type="button"
                                 onClick={startAdd}
                                 aria-label="Add shortcut"
-                                className="flex h-10 w-10 items-center justify-center rounded-xl border border-dashed border-black/20 text-neutral-400 dark:border-white/20"
+                                className="shortcut-add"
                             >
-                                +
+                                <Plus size={19} /><span>Add new</span>
                             </button>
                         )}
                     </div>
@@ -158,7 +171,8 @@ export default function ShortcutsCard() {
                         <CardEmpty>Add your first shortcut with the + button above.</CardEmpty>
                     )}
 
-                    {adding && (
+
+                    <Modal open={adding} onClose={() => setAdding(false)} title="Add a shortcut">
                         <div className="space-y-2 rounded-lg border border-black/10 p-2 dark:border-white/10">
                             <div className="flex items-center gap-2">
                                 <button
@@ -186,6 +200,7 @@ export default function ShortcutsCard() {
                                 <input
                                     value={label}
                                     onChange={(e) => setLabel(e.target.value)}
+                                    aria-label="Shortcut name"
                                     placeholder="Label"
                                     className="min-w-0 flex-1 rounded border border-black/10 bg-transparent px-2 py-1 text-sm outline-none dark:border-white/10"
                                 />
@@ -193,6 +208,7 @@ export default function ShortcutsCard() {
                             <input
                                 value={url}
                                 onChange={(e) => setUrl(e.target.value)}
+                                aria-label="Shortcut URL"
                                 placeholder="URL"
                                 className="w-full rounded border border-black/10 bg-transparent px-2 py-1 text-sm outline-none dark:border-white/10"
                             />
@@ -205,7 +221,7 @@ export default function ShortcutsCard() {
                                 </button>
                             </div>
                         </div>
-                    )}
+                    </Modal>
                 </div>
             )}
         </BentoCard>

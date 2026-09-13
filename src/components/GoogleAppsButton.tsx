@@ -1,11 +1,17 @@
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
-import { Bookmark, CircleUserRound, Grid3x3, Palette, Store, type LucideIcon } from 'lucide-react'
+import { Offcanvas } from './Offcanvas'
+import { ShortcutIcon } from './ShortcutIcon'
+import { BookmarkSimpleIcon as Bookmark } from '@phosphor-icons/react/dist/csr/BookmarkSimple'
+import { UserCircleIcon as CircleUserRound } from '@phosphor-icons/react/dist/csr/UserCircle'
+import { SquaresFourIcon as Grid3x3 } from '@phosphor-icons/react/dist/csr/SquaresFour'
+import { PaletteIcon as Palette } from '@phosphor-icons/react/dist/csr/Palette'
+import { StorefrontIcon as Store } from '@phosphor-icons/react/dist/csr/Storefront'
+import type { Icon as IconComponent } from '@phosphor-icons/react/lib'
 
 function productIcon(slug: string): string {
     return `https://www.gstatic.com/images/branding/product/2x/${slug}_48dp.png`
 }
 
-type AppEntry = { label: string; url: string } & ({ icon: string } | { Icon: LucideIcon })
+type AppEntry = { label: string; url: string } & ({ icon: string } | { Icon: IconComponent })
 
 const APPS: AppEntry[] = [
     { label: 'Account', url: 'https://myaccount.google.com', Icon: CircleUserRound },
@@ -48,46 +54,22 @@ const APPS: AppEntry[] = [
 
 export default function GoogleAppsButton() {
     return (
-        <DropdownMenu.Root>
-            <DropdownMenu.Trigger asChild>
-                <button
-                    type="button"
-                    aria-label="Google apps"
-                    className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 transition hover:bg-black/5 dark:text-neutral-400 dark:hover:bg-white/10"
-                >
-                    <Grid3x3 className="h-5 w-5" />
-                </button>
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Portal>
-                <DropdownMenu.Content
-                    align="end"
-                    sideOffset={8}
-                    className="dropdown-animate z-30 w-80 rounded-2xl border border-black/10 bg-white p-3 shadow-xl outline-none dark:border-white/10 dark:bg-neutral-900"
-                >
-                    <div className="themed-scrollbar grid max-h-96 grid-cols-4 gap-1 overflow-y-auto">
-                        {APPS.map((app) => (
-                            <DropdownMenu.Item key={app.url} asChild>
-                                <a
-                                    href={app.url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    title={app.label}
-                                    className="flex flex-col items-center gap-1 rounded-lg p-2 outline-none hover:bg-black/5 focus:bg-black/5 dark:hover:bg-white/10 dark:focus:bg-white/10"
-                                >
-                                    {'icon' in app ? (
-                                        <img src={app.icon} alt="" className="h-9 w-9" />
-                                    ) : (
-                                        <app.Icon className="h-9 w-9 text-neutral-400" />
-                                    )}
-                                    <span className="max-w-full truncate text-center text-[10px] text-neutral-500 dark:text-neutral-400">
-                                        {app.label}
-                                    </span>
-                                </a>
-                            </DropdownMenu.Item>
-                        ))}
-                    </div>
-                </DropdownMenu.Content>
-            </DropdownMenu.Portal>
-        </DropdownMenu.Root>
+        <Offcanvas
+            title="Apps"
+            description="Your Google essentials, ready to open."
+            icon={Grid3x3}
+            trigger={<button type="button" aria-label="Google apps"><Grid3x3 size={20} /></button>}
+        >
+            <div className="launcher-grid">
+                {APPS.map((app) => (
+                    <a key={app.url} href={app.url} target="_blank" rel="noreferrer" className="launcher-tile">
+                        <span className="launcher-icon">
+                            {'icon' in app ? <ShortcutIcon url={app.url} label={app.label} icon={app.icon} className="h-8 w-8 rounded-lg" /> : <app.Icon size={32} />}
+                        </span>
+                        <span>{app.label}</span>
+                    </a>
+                ))}
+            </div>
+        </Offcanvas>
     )
 }

@@ -1,19 +1,17 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import {
-    CircleHelp,
-    Cloud,
-    CloudDrizzle,
-    CloudFog,
-    CloudLightning,
-    CloudRain,
-    CloudSnow,
-    CloudSun,
-    Droplet,
-    MapPin,
-    Sun,
-    Thermometer,
-    type LucideIcon,
-} from 'lucide-react'
+import { QuestionIcon as CircleHelp } from '@phosphor-icons/react/dist/csr/Question'
+import { CloudIcon as Cloud } from '@phosphor-icons/react/dist/csr/Cloud'
+import { CloudRainIcon as CloudDrizzle } from '@phosphor-icons/react/dist/csr/CloudRain'
+import { CloudFogIcon as CloudFog } from '@phosphor-icons/react/dist/csr/CloudFog'
+import { CloudLightningIcon as CloudLightning } from '@phosphor-icons/react/dist/csr/CloudLightning'
+import { CloudRainIcon as CloudRain } from '@phosphor-icons/react/dist/csr/CloudRain'
+import { CloudSnowIcon as CloudSnow } from '@phosphor-icons/react/dist/csr/CloudSnow'
+import { CloudSunIcon as CloudSun } from '@phosphor-icons/react/dist/csr/CloudSun'
+import { DropIcon as Droplet } from '@phosphor-icons/react/dist/csr/Drop'
+import { MapPinIcon as MapPin } from '@phosphor-icons/react/dist/csr/MapPin'
+import { SunIcon as Sun } from '@phosphor-icons/react/dist/csr/Sun'
+import { ThermometerIcon as Thermometer } from '@phosphor-icons/react/dist/csr/Thermometer'
+import type { Icon as IconComponent } from '@phosphor-icons/react/lib'
 import { BentoCard } from '../BentoGrid'
 import { CardEmpty, CardError, CardSkeleton } from '../CardState'
 import { DEFAULT_SETTINGS, type WeatherCache } from '../../lib/storage'
@@ -21,7 +19,7 @@ import { useStorageValue } from '../../lib/useStorageValue'
 
 const CACHE_TTL_MS = 15 * 60 * 1000
 
-const WEATHER_CODES: Record<number, { text: string; Icon: LucideIcon }> = {
+const WEATHER_CODES: Record<number, { text: string; Icon: IconComponent }> = {
     0: { text: 'Clear sky', Icon: Sun },
     1: { text: 'Mostly clear', Icon: CloudSun },
     2: { text: 'Partly cloudy', Icon: CloudSun },
@@ -61,7 +59,7 @@ async function reverseGeocode(lat: number, lon: number): Promise<string> {
     }
 }
 
-function Pill({ icon: Icon, fillPercent, children }: { icon: LucideIcon; fillPercent?: number; children: ReactNode }) {
+function Pill({ icon: Icon, fillPercent, children }: { icon: IconComponent; fillPercent?: number; children: ReactNode }) {
     return (
         <span className="relative flex items-center gap-1.5 overflow-hidden rounded-full bg-black/5 px-3 py-1 text-xs text-neutral-600 dark:bg-white/10 dark:text-neutral-300">
             {fillPercent !== undefined && (
@@ -80,7 +78,7 @@ type Status = 'checking-permission' | 'need-permission' | 'loading' | 'error' | 
 
 export default function WeatherCard() {
     const [settings, setSettings] = useStorageValue('settings', DEFAULT_SETTINGS)
-    const [cache, setCache] = useStorageValue('weather:cache', null)
+    const [cache, setCache, cacheLoading] = useStorageValue('weather:cache', null)
     const [status, setStatus] = useState<Status>('checking-permission')
 
     const fetchWeather = () => {
@@ -124,6 +122,7 @@ export default function WeatherCard() {
     }
 
     useEffect(() => {
+        if (cacheLoading) return
         let cancelled = false
 
         async function run() {
@@ -152,22 +151,22 @@ export default function WeatherCard() {
         return () => {
             cancelled = true
         }
-        // Intentionally runs once on mount to decide the initial status; fetchWeather is only
+        // Wait for stored weather before deciding the initial status; fetchWeather is only
         // ever invoked afterwards via the explicit "Enable location" button.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    }, [cacheLoading])
 
     const displayTemp = (celsius: number) =>
         settings.tempUnit === 'fahrenheit' ? Math.round((celsius * 9) / 5 + 32) : Math.round(celsius)
     const unitSymbol = settings.tempUnit === 'fahrenheit' ? '°F' : '°C'
 
     return (
-        <BentoCard title="Weather">
+        <BentoCard title="Weather" className="weather-card" action={<span className="card-meta">LOCAL</span>}>
             {status === 'checking-permission' || status === 'loading' ? (
                 <CardSkeleton />
             ) : status === 'need-permission' ? (
                 <CardEmpty>
-                    <p className="mb-2">Enable location to show local weather. Stays on your device.</p>
+                    <span className="weather-sun" aria-hidden="true">☀</span><strong>A peek outside.</strong><p className="mb-2">Your local forecast, right here.</p>
                     <button
                         type="button"
                         onClick={fetchWeather}
@@ -191,11 +190,11 @@ export default function WeatherCard() {
                 (() => {
                     const { Icon, text } = describeCode(cache.current.conditionCode)
                     return (
-                        <div className="space-y-3">
+                        <div className="weather-content space-y-3">
                             <div className="flex items-start justify-between gap-2">
                                 <div>
                                     <p className="text-xs text-neutral-400">{text}</p>
-                                    <p className="text-4xl font-light tabular-nums">
+                                    <p className="weather-temperature tabular-nums">
                                         {displayTemp(cache.current.temperatureC)}°
                                     </p>
                                     <p className="text-xs text-neutral-400">

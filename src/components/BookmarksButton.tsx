@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Bookmark } from 'lucide-react'
+import { BookmarkSimpleIcon as Bookmark } from '@phosphor-icons/react/dist/csr/BookmarkSimple'
 import { Modal } from './Modal'
 import BookmarksPanel from './BookmarksPanel'
 

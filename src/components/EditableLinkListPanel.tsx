@@ -1,5 +1,6 @@
+import { useUndoDelete } from '../lib/useUndoDelete'
 import { useState } from 'react'
-import { Plus } from 'lucide-react'
+import { PlusIcon as Plus } from '@phosphor-icons/react/dist/csr/Plus'
 import { ShortcutIcon } from './ShortcutIcon'
 import { useStorageValue } from '../lib/useStorageValue'
 
@@ -30,9 +31,8 @@ export function EditableLinkListPanel({
         setItems(items.map((s) => (s.id === id ? { ...s, url: normalized } : s)))
     }
 
-    const remove = (id: string) => {
-        setItems(items.filter((s) => s.id !== id))
-    }
+    const undoDelete = useUndoDelete()
+    const remove = (id: string) => { void undoDelete(storageKey, id, 'Shortcut') }
 
     const startAdd = () => {
         setNewLabel('')

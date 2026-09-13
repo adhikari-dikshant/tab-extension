@@ -11,7 +11,7 @@ export function CardSkeleton() {
 
 export function CardEmpty({ children }: { children: ReactNode }) {
     return (
-        <div className="rounded-lg border border-dashed border-black/15 p-4 text-center text-sm text-neutral-500 dark:border-white/15 dark:text-neutral-400">
+        <div className="card-empty">
             {children}
         </div>
     )

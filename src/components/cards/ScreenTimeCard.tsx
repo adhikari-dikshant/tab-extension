@@ -1,3 +1,5 @@
+import { ArrowUpRightIcon as ArrowUpRight } from '@phosphor-icons/react/dist/csr/ArrowUpRight'
+import { TimerIcon as Timer } from '@phosphor-icons/react/dist/csr/Timer'
 import { useEffect, useState } from 'react'
 import { BentoCard } from '../BentoGrid'
 import { CardEmpty, CardSkeleton } from '../CardState'
@@ -81,7 +83,7 @@ export default function ScreenTimeCard() {
 
     if (permission === 'checking') {
         return (
-            <BentoCard title="Screen time">
+            <BentoCard title="Screen time" className="screentime-card">
                 <CardSkeleton />
             </BentoCard>
         )
@@ -89,12 +91,9 @@ export default function ScreenTimeCard() {
 
     if (permission === 'denied') {
         return (
-            <BentoCard title="Screen time">
+            <BentoCard title="Screen time" className="screentime-card">
                 <CardEmpty>
-                    <p className="mb-2">
-                        See where your time online goes today. Tracking happens locally only — nothing leaves your
-                        device.
-                    </p>
+                    <span className="empty-illustration"><Timer size={25} /></span><strong>Make time for what matters.</strong><p className="mb-2">Understand your day. Private by default.</p>
                     <button
                         type="button"
                         onClick={enable}
@@ -124,16 +123,14 @@ export default function ScreenTimeCard() {
 
     return (
         <>
-            <button type="button" onClick={() => setModalOpen(true)} className="block w-full text-left">
-                <BentoCard title="Screen time">
-                    {today === null ? (
-                        <CardSkeleton />
-                    ) : (
-                        <div className="space-y-2">
-                            <p className="text-2xl font-light">{formatDuration(totalToday)}</p>
+            <button type="button" onClick={() => setModalOpen(true)} className="screentime-trigger text-left" aria-label="View screen time details">
+                <BentoCard title="Screen time" className="screentime-card">
+                    <div className="space-y-2">
+                            <p className="screen-total">{formatDuration(totalToday)}</p>
+                            <span className="screen-label">spent online today <ArrowUpRight size={14} /></span>
                             <SegmentedBar domains={topToday} total={totalToday} />
-                        </div>
-                    )}
+                            <div className="screen-legend">{topToday.slice(0, 2).map(([domain]) => <span key={domain}><i style={{ backgroundColor: domainColor(domain) }} />{domain}</span>)}{totalToday === 0 && <span>Your activity will appear here.</span>}</div>
+                    </div>
                 </BentoCard>
             </button>
 

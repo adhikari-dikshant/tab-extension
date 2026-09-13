@@ -4,8 +4,17 @@ export type ClockStyle = 'digital' | 'analog'
 export type TempUnit = 'celsius' | 'fahrenheit'
 export type Theme = 'system' | 'light' | 'dark'
 
-export const BENTO_WIDGET_IDS = ['shortcuts', 'todo', 'weather', 'screentime'] as const
-export const PAGE_WIDGET_IDS = ['clock', 'customText', 'greeting', 'quotes', 'bookmarks', 'googleApps', 'aiTools'] as const
+export const BENTO_WIDGET_IDS = ['shortcuts', 'todo', 'weather', 'screentime', 'mostVisited', 'notes'] as const
+export const PAGE_WIDGET_IDS = [
+    'clock',
+    'customText',
+    'greeting',
+    'quotes',
+    'bookmarks',
+    'googleApps',
+    'aiTools',
+    'recentlyClosed',
+] as const
 export const WIDGET_IDS = [...BENTO_WIDGET_IDS, ...PAGE_WIDGET_IDS] as const
 export type WidgetId = (typeof WIDGET_IDS)[number]
 
@@ -14,6 +23,8 @@ export const WIDGET_LABELS: Record<WidgetId, string> = {
     todo: 'To-do',
     weather: 'Weather',
     screentime: 'Screen time',
+    mostVisited: 'Most visited',
+    notes: 'Notes',
     clock: 'Clock',
     customText: 'Custom text',
     greeting: 'Greeting',
@@ -21,6 +32,7 @@ export const WIDGET_LABELS: Record<WidgetId, string> = {
     bookmarks: 'Bookmarks',
     googleApps: 'Google apps',
     aiTools: 'AI tools',
+    recentlyClosed: 'Recently closed tabs',
 }
 
 export const ACCENT_PRESETS = [
@@ -54,6 +66,11 @@ export interface Settings {
     screenTimeEnabled: boolean
     searchSuggestionsEnabled: boolean
     hideMicrophone: boolean
+    notesEnabled: boolean
+    focusEnabled: boolean
+    desktopReminders: boolean
+    cardOrder: (typeof BENTO_WIDGET_IDS)[number][]
+    featuredCard: (typeof BENTO_WIDGET_IDS)[number]
 }
 
 export interface QuoteCache {
@@ -76,6 +93,11 @@ export interface Todo {
     done: boolean
     pinned: boolean
     createdAt: number
+    dueDate?: string
+    repeat?: 'none' | 'daily' | 'weekly'
+    completedCount?: number
+    lastCompletedAt?: number
+    reminderFor?: string
 }
 
 export interface WeatherCache {
@@ -91,7 +113,21 @@ export interface WeatherCache {
     }
 }
 
+export interface Note { id: string; title: string; body: string; pinned: boolean; updatedAt: number }
+export interface Workspace { id: string; name: string; tabs: { title: string; url: string; pinned: boolean }[]; createdAt: number }
+export interface FocusSession {
+    id: string; taskId?: string; label: string; mode: 'focus' | 'break'; durationMs: number
+    remainingMs: number; endsAt: number | null; status: 'running' | 'paused' | 'finished'
+}
+export interface FocusState {
+    session: FocusSession | null
+    history: { id: string; taskId?: string; label: string; minutes: number; completedAt: number }[]
+}
+
 export interface StorageSchema {
+    notes: Note[]
+    workspaces: Workspace[]
+    focus: FocusState
     settings: Settings
     shortcuts: Shortcut[]
     aiTools: Shortcut[]
@@ -102,7 +138,7 @@ export interface StorageSchema {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-    theme: 'system',
+    theme: 'light',
     accentColor: ACCENT_PRESETS[4],
     opacity: 100,
     searchEngine: 'google',
@@ -120,6 +156,11 @@ export const DEFAULT_SETTINGS: Settings = {
     screenTimeEnabled: false,
     searchSuggestionsEnabled: true,
     hideMicrophone: false,
+    notesEnabled: true,
+    focusEnabled: true,
+    desktopReminders: false,
+    cardOrder: ['shortcuts', 'todo', 'weather', 'mostVisited', 'notes', 'screentime'],
+    featuredCard: 'todo',
 }
 
 export function createDefaultShortcuts(): Shortcut[] {

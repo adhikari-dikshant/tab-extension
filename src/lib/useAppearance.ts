@@ -3,9 +3,10 @@ import { DEFAULT_SETTINGS } from './storage'
 import { useStorageValue } from './useStorageValue'
 
 /** Applies theme + accent + opacity to the document root: resolves theme "system" via
- * matchMedia (staying live if the OS preference changes), and sets the --accent and
- * --ui-opacity CSS variables. Call once at the page root. Wallpaper is applied separately, as
- * an inline style on the actual visible root element (see NewTab) rather than on
+ * matchMedia (staying live if the OS preference changes), sets the --accent and --ui-opacity
+ * CSS variables, and flags data-wallpaper so cards/command-bar know to switch from a solid
+ * tonal fill to frosted glass. Call once at the page root. The wallpaper image itself is applied
+ * separately as an inline style on the actual visible root element (see NewTab) rather than on
  * document.body, which sits behind that element and would never show through. */
 export function useAppearance() {
     const [settings] = useStorageValue('settings', DEFAULT_SETTINGS)
@@ -31,4 +32,9 @@ export function useAppearance() {
     useEffect(() => {
         document.documentElement.style.setProperty('--ui-opacity', String(settings.opacity / 100))
     }, [settings.opacity])
+
+    useEffect(() => {
+        const active = settings.wallpaper.type !== 'none' && !!settings.wallpaper.value
+        document.documentElement.dataset.wallpaper = String(active)
+    }, [settings.wallpaper])
 }

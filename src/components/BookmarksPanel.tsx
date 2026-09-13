@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Bookmark, ChevronDown, Clock, Folder, Pencil, Search } from 'lucide-react'
+import { BookmarkSimpleIcon as Bookmark } from '@phosphor-icons/react/dist/csr/BookmarkSimple'
+import { CaretDownIcon as ChevronDown } from '@phosphor-icons/react/dist/csr/CaretDown'
+import { ClockIcon as Clock } from '@phosphor-icons/react/dist/csr/Clock'
+import { FolderIcon as Folder } from '@phosphor-icons/react/dist/csr/Folder'
+import { PencilSimpleIcon as Pencil } from '@phosphor-icons/react/dist/csr/PencilSimple'
+import { MagnifyingGlassIcon as Search } from '@phosphor-icons/react/dist/csr/MagnifyingGlass'
 import { CardEmpty, CardSkeleton } from './CardState'
 import { faviconFor } from '../lib/storage'
 
@@ -158,16 +163,17 @@ export default function BookmarksPanel() {
     return (
         <div>
             <div className="relative mb-4">
-                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-600 dark:text-neutral-300" />
                 <input
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
+                    aria-label="Search bookmarks"
                     placeholder="Search bookmarks…"
-                    className="w-full rounded-full border border-black/10 bg-transparent py-2 pl-9 pr-3 text-sm outline-none dark:border-white/10"
+                    className="w-full rounded-full border border-black/10 bg-transparent py-2 pl-9 pr-3 text-sm text-neutral-900 outline-none placeholder:text-neutral-600 dark:border-white/10 dark:text-neutral-100 dark:placeholder:text-neutral-400"
                 />
             </div>
 
-            <div className="mb-4 flex items-center justify-end gap-3 text-xs text-neutral-400">
+            <div className="mb-4 flex items-center justify-end gap-3 text-xs text-neutral-600 dark:text-neutral-300">
                 <button type="button" onClick={() => setSortBy(sortBy === 'title' ? 'date' : 'title')}>
                     Sort: {sortBy === 'title' ? 'A–Z' : 'Newest'}
                 </button>
@@ -189,7 +195,8 @@ export default function BookmarksPanel() {
                                 <button
                                     type="button"
                                     onClick={() => setCollapsed((c) => ({ ...c, [folder]: !isCollapsed }))}
-                                    className="mb-5 flex w-full items-center gap-1.5 text-sm font-medium text-white"
+                                    aria-expanded={!isCollapsed}
+                                    className="mb-5 flex w-full items-center gap-1.5 text-sm font-medium text-neutral-900 dark:text-neutral-100"
                                 >
                                     <ChevronDown
                                         className={`h-3.5 w-3.5 shrink-0 transition-transform ${isCollapsed ? '-rotate-90' : ''}`}
@@ -208,14 +215,14 @@ export default function BookmarksPanel() {
                                             {items.map((b) => (
                                                 <li key={`${folder}-${b.id}`} className="group flex items-center gap-2 text-sm">
                                                     <Favicon url={b.url} className="h-4 w-4 shrink-0" />
-                                                    <a href={b.url} className="min-w-0 flex-1 truncate hover:underline">
+                                                    <a href={b.url} className="min-w-0 flex-1 truncate text-neutral-900 hover:underline dark:text-neutral-200">
                                                         {b.title}
                                                     </a>
                                                     <button
                                                         type="button"
                                                         onClick={() => startEdit(b)}
                                                         aria-label="Edit bookmark"
-                                                        className="hidden text-neutral-400 group-hover:inline-flex"
+                                                        className="hidden text-neutral-600 group-hover:inline-flex group-focus-within:inline-flex dark:text-neutral-300"
                                                     >
                                                         <Pencil className="h-3.5 w-3.5" />
                                                     </button>
@@ -223,7 +230,7 @@ export default function BookmarksPanel() {
                                                         type="button"
                                                         onClick={() => remove(b.id)}
                                                         aria-label="Delete bookmark"
-                                                        className="hidden text-neutral-400 group-hover:inline"
+                                                        className="hidden text-neutral-600 group-hover:inline group-focus-within:inline dark:text-neutral-300"
                                                     >
                                                         ×
                                                     </button>
@@ -248,7 +255,7 @@ export default function BookmarksPanel() {
                                                             className="h-14 w-14 rounded-full bg-black/5 p-3 dark:bg-white/10"
                                                         />
                                                     </button>
-                                                    <span className="w-full truncate text-center text-xs text-neutral-800 dark:text-neutral-400">
+                                                    <span className="w-full truncate text-center text-xs text-neutral-900 dark:text-neutral-200">
                                                         {b.title}
                                                     </span>
                                                     <button
@@ -284,7 +291,7 @@ export default function BookmarksPanel() {
                         className="w-full rounded border border-black/10 bg-transparent px-2 py-1 text-sm outline-none dark:border-white/10"
                     />
                     <div className="flex justify-end gap-2 text-sm">
-                        <button type="button" onClick={() => setEditing(null)} className="text-neutral-400">
+                        <button type="button" onClick={() => setEditing(null)} className="text-neutral-600 dark:text-neutral-300">
                             Cancel
                         </button>
                         <button type="button" onClick={saveEdit} className="font-medium">

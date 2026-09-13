@@ -1,4 +1,4 @@
-import { Palette } from 'lucide-react'
+import { PaletteIcon as Palette } from '@phosphor-icons/react/dist/csr/Palette'
 import { ACCENT_PRESETS, type Settings } from '../lib/storage'
 
 export function AccentColorPicker({
@@ -16,6 +16,7 @@ export function AccentColorPicker({
                     type="button"
                     onClick={() => onChange(color)}
                     aria-label={`Use ${color} accent`}
+                    aria-pressed={accentColor === color}
                     className="h-8 w-8 rounded-full transition"
                     style={{
                         backgroundColor: color,
@@ -30,6 +31,7 @@ export function AccentColorPicker({
                 <Palette className="h-4 w-4" />
                 <input
                     type="color"
+                    aria-label="Custom color scheme"
                     value={accentColor}
                     onChange={(e) => onChange(e.target.value)}
                     className="absolute inset-0 cursor-pointer opacity-0"

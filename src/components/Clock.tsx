@@ -6,22 +6,15 @@ import { useStorageValue } from '../lib/useStorageValue'
 export default function Clock() {
     const [settings] = useStorageValue('settings', DEFAULT_SETTINGS)
     const [now, setNow] = useState(() => new Date())
-    const isAnalog = settings.clockStyle === 'analog'
-
     useEffect(() => {
-        if (isAnalog) return
-        const id = setInterval(() => setNow(new Date()), 1000)
-        return () => clearInterval(id)
-    }, [isAnalog])
-
-    if (isAnalog) return <AnalogClock />
-
-    const time = now.toLocaleTimeString([], {
-        hour: 'numeric',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: settings.clockFormat === '12h',
-    })
-
-    return <span className="text-2xl font-light tabular-nums text-neutral-600 dark:text-neutral-300">{time}</span>
+        const timer = setInterval(() => setNow(new Date()), 1000)
+        return () => clearInterval(timer)
+    }, [])
+    const parts = new Intl.DateTimeFormat([], { hour: 'numeric', minute: '2-digit', hour12: settings.clockFormat === '12h' }).formatToParts(now)
+    const time = parts.filter(p => p.type !== 'dayPeriod').map(p => p.value).join('').trim()
+    const period = parts.find(p => p.type === 'dayPeriod')?.value
+    return <>
+        {settings.clockStyle === 'analog' ? <AnalogClock /> : <div className="digital-clock"><time dateTime={now.toISOString()}>{time}</time>{period && <span>{period}</span>}</div>}
+        <p className="clock-date">{now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+    </>
 }

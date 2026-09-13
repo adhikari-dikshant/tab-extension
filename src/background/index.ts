@@ -1,5 +1,6 @@
+import './productivity'
+import { changeStored } from '../lib/productivity'
 import { dateKey, normalizeDomain, storageKeyForDate, type ScreenTimeDay } from '../lib/screentime'
-import type { Todo } from '../lib/storage'
 
 const DAILY_RESET_ALARM = 'daily-reset'
 const SCREEN_TIME_FLUSH_ALARM = 'screen-time-flush'
@@ -13,10 +14,9 @@ function scheduleDailyReset() {
 }
 
 async function runDailyReset() {
-    const { todos } = await chrome.storage.local.get('todos')
-    const list = (todos ?? []) as Todo[]
-    const next = list.filter((t) => t.pinned || !t.done).map((t) => (t.pinned ? { ...t, done: false } : t))
-    await chrome.storage.local.set({ todos: next })
+    await changeStored('todos', [], (list) => list
+        .filter((todo) => (todo.repeat && todo.repeat !== 'none') || todo.pinned || !todo.done)
+        .map((todo) => todo.pinned && !todo.dueDate && (!todo.repeat || todo.repeat === 'none') ? { ...todo, done: false } : todo))
 }
 
 chrome.runtime.onInstalled.addListener(() => {

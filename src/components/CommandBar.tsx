@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
-import { Mic } from 'lucide-react'
+import { AppWindowIcon as AppWindow } from '@phosphor-icons/react/dist/csr/AppWindow'
+import { BookmarkSimpleIcon as Bookmark } from '@phosphor-icons/react/dist/csr/BookmarkSimple'
+import { MicrophoneIcon as Mic } from '@phosphor-icons/react/dist/csr/Microphone'
+import { MagnifyingGlassIcon as Search } from '@phosphor-icons/react/dist/csr/MagnifyingGlass'
 import { DEFAULT_SETTINGS, faviconFor, type SearchEngine } from '../lib/storage'
 import { useStorageValue } from '../lib/useStorageValue'
 import { directUrlFor, parseBookmarkTarget, parseCommand, searchUrl } from '../lib/commandParser'
 import { fetchSuggestions, hasSuggestPermission, hostPermissionFor, requestSuggestPermission } from '../lib/searchSuggestions'
+import { searchLocalSources, type PaletteResult } from '../lib/commandPalette'
 import { useVoiceSearch } from '../lib/voiceSearch'
 import { useToast } from '../lib/useToast'
 
@@ -19,17 +23,39 @@ const ENGINES: { id: SearchEngine; label: string; homepage: string }[] = [
 
 const SUGGEST_DEBOUNCE_MS = 200
 
+type ListItem = { key: string; kind: PaletteResult['kind'] | 'search'; label: string; result?: PaletteResult }
+
 export default function CommandBar() {
     const [settings, setSettings] = useStorageValue('settings', DEFAULT_SETTINGS)
     const [todos, setTodos] = useStorageValue('todos', [])
     const [shortcuts] = useStorageValue('shortcuts', [])
+    const [aiTools] = useStorageValue('aiTools', [])
     const [value, setValue] = useState('')
-    const [suggestions, setSuggestions] = useState<string[]>([])
+    const [items, setItems] = useState<ListItem[]>([])
     const [showSuggestions, setShowSuggestions] = useState(false)
     const [activeIndex, setActiveIndex] = useState(-1)
     const [needsSuggestPermission, setNeedsSuggestPermission] = useState(false)
+    const [sourcePermissions, setSourcePermissions] = useState({ tabs: false, bookmarks: false })
     const inputRef = useRef<HTMLInputElement>(null)
     const showToast = useToast()
+
+    useEffect(() => {
+        const checkPerms = () => {
+            chrome.permissions.contains({ permissions: ['tabs'] }, (tabs) =>
+                setSourcePermissions((prev) => ({ ...prev, tabs })),
+            )
+            chrome.permissions.contains({ permissions: ['bookmarks'] }, (bookmarks) =>
+                setSourcePermissions((prev) => ({ ...prev, bookmarks })),
+            )
+        }
+        checkPerms()
+        chrome.permissions.onAdded.addListener(checkPerms)
+        chrome.permissions.onRemoved.addListener(checkPerms)
+        return () => {
+            chrome.permissions.onAdded.removeListener(checkPerms)
+            chrome.permissions.onRemoved.removeListener(checkPerms)
+        }
+    }, [])
 
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent | globalThis.KeyboardEvent) => {
@@ -50,28 +76,44 @@ export default function CommandBar() {
         return () => window.removeEventListener('keydown', onKeyDown)
     }, [])
 
-    // Debounced suggestions, only for bare search queries (not t:/b:/@ commands).
+    // Debounced unified results: your own tabs/shortcuts/AI tools/bookmarks first, then web
+    // search suggestions as a fallback — only for bare search queries (not t:/b:/@ commands).
     useEffect(() => {
         const controller = new AbortController()
         const timer = setTimeout(async () => {
             const command = parseCommand(value)
-            if (!settings.searchSuggestionsEnabled || !command || command.type !== 'search' || directUrlFor(command.query)) {
-                setSuggestions([])
+            if (!command || command.type !== 'search' || directUrlFor(command.query)) {
+                setItems([])
                 return
             }
-            const results = await fetchSuggestions(settings.searchEngine, command.query, controller.signal)
-            if (!controller.signal.aborted) {
-                setSuggestions(results)
-                setShowSuggestions(true)
-                setActiveIndex(-1)
+
+            const local = await searchLocalSources(command.query, {
+                tabsGranted: sourcePermissions.tabs,
+                bookmarksGranted: sourcePermissions.bookmarks,
+                shortcuts,
+                aiTools,
+            })
+            if (controller.signal.aborted) return
+
+            const localItems: ListItem[] = local.map((r) => ({ key: r.key, kind: r.kind, label: r.label, result: r }))
+
+            let searchItems: ListItem[] = []
+            if (settings.searchSuggestionsEnabled) {
+                const suggestions = await fetchSuggestions(settings.searchEngine, command.query, controller.signal)
+                if (controller.signal.aborted) return
+                searchItems = suggestions.map((s) => ({ key: `search-${s}`, kind: 'search', label: s }))
             }
+
+            setItems([...localItems, ...searchItems])
+            setShowSuggestions(true)
+            setActiveIndex(-1)
         }, SUGGEST_DEBOUNCE_MS)
 
         return () => {
             controller.abort()
             clearTimeout(timer)
         }
-    }, [value, settings.searchEngine, settings.searchSuggestionsEnabled])
+    }, [value, settings.searchEngine, settings.searchSuggestionsEnabled, sourcePermissions, shortcuts, aiTools])
 
     useEffect(() => {
         let cancelled = false
@@ -85,7 +127,21 @@ export default function CommandBar() {
 
     const runSearch = (query: string) => {
         const direct = directUrlFor(query)
-        window.location.href = direct ?? searchUrl(settings.searchEngine, query)
+        window.location.assign(direct ?? searchUrl(settings.searchEngine, query))
+    }
+
+    const selectItem = (item: ListItem) => {
+        if (item.kind === 'search') {
+            runSearch(item.label)
+            return
+        }
+        const result = item.result!
+        if (result.kind === 'tab' && result.tabId !== undefined && result.windowId !== undefined) {
+            chrome.tabs.update(result.tabId, { active: true })
+            chrome.windows.update(result.windowId, { focused: true })
+            return
+        }
+        window.location.assign(result.url)
     }
 
     const submit = (raw: string) => {
@@ -122,7 +178,7 @@ export default function CommandBar() {
                 showToast(`No shortcut named "${command.name}"`)
                 return
             }
-            window.location.href = match.url
+            window.location.assign(match.url)
             return
         }
 
@@ -131,21 +187,21 @@ export default function CommandBar() {
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault()
-        if (activeIndex >= 0 && suggestions[activeIndex]) {
-            runSearch(suggestions[activeIndex])
+        if (activeIndex >= 0 && items[activeIndex]) {
+            selectItem(items[activeIndex])
             return
         }
         submit(value)
     }
 
     const onInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-        if (!showSuggestions || suggestions.length === 0) return
+        if (!showSuggestions || items.length === 0) return
         if (e.key === 'ArrowDown') {
             e.preventDefault()
-            setActiveIndex((i) => (i + 1) % suggestions.length)
+            setActiveIndex((i) => (i + 1) % items.length)
         } else if (e.key === 'ArrowUp') {
             e.preventDefault()
-            setActiveIndex((i) => (i - 1 + suggestions.length) % suggestions.length)
+            setActiveIndex((i) => (i - 1 + items.length) % items.length)
         } else if (e.key === 'Escape') {
             setShowSuggestions(false)
         }
@@ -170,8 +226,8 @@ export default function CommandBar() {
     const currentEngine = ENGINES.find((e) => e.id === settings.searchEngine)!
 
     return (
-        <form onSubmit={handleSubmit} className="relative w-full max-w-xl">
-            <div className="glass-surface flex items-center gap-2 rounded-full border border-black/10 px-4 py-2.5 shadow-sm ring-0 transition focus-within:ring-2 focus-within:ring-black/20 dark:border-white/10 dark:focus-within:ring-white/30">
+        <form onSubmit={handleSubmit} className="command-bar relative w-full">
+            <div className="search-surface glass-surface flex items-center gap-2 rounded-full border border-black/10 px-4 py-2.5 shadow-sm ring-0 transition focus-within:ring-2 focus-within:ring-black/20 dark:border-white/10 dark:focus-within:ring-white/30">
                 {settings.hideSearchEngines ? (
                     <button
                         type="button"
@@ -217,9 +273,10 @@ export default function CommandBar() {
                     value={value}
                     onChange={(e) => setValue(e.target.value)}
                     onKeyDown={onInputKeyDown}
-                    onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                    onFocus={() => items.length > 0 && setShowSuggestions(true)}
                     onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-                    placeholder="Search, or try t: b: @shortcut"
+                    aria-label="Search the web or enter a command"
+                    placeholder="Search anything, or make something happen…"
                     className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-neutral-400 dark:placeholder:text-neutral-500"
                 />
                 {voice.supported && !settings.hideMicrophone && (
@@ -239,20 +296,43 @@ export default function CommandBar() {
                 </kbd>
             </div>
 
-            {showSuggestions && suggestions.length > 0 && (
+            {showSuggestions && items.length > 0 && (
                 <div className="dropdown-animate absolute left-0 right-0 top-full z-10 mt-2 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-lg dark:border-white/10 dark:bg-neutral-900">
-                    <ul>
-                        {suggestions.map((s, i) => (
-                            <li key={s}>
+                    <ul className="themed-scrollbar max-h-96 overflow-y-auto">
+                        {items.map((item, i) => (
+                            <li key={item.key}>
                                 <button
                                     type="button"
                                     onMouseDown={(e) => e.preventDefault()}
-                                    onClick={() => runSearch(s)}
-                                    className={`block w-full truncate px-4 py-2 text-left text-sm ${
+                                    onClick={() => selectItem(item)}
+                                    className={`flex w-full items-center gap-2 px-4 py-2 text-left text-sm ${
                                         i === activeIndex ? 'bg-black/5 dark:bg-white/10' : ''
                                     }`}
                                 >
-                                    {s}
+                                    {item.kind === 'search' && <Search className="h-3.5 w-3.5 shrink-0 text-neutral-400" />}
+                                    {item.kind === 'tab' && (
+                                        <>
+                                            {item.result?.favicon ? (
+                                                <img src={item.result.favicon} alt="" className="h-3.5 w-3.5 shrink-0" />
+                                            ) : (
+                                                <AppWindow className="h-3.5 w-3.5 shrink-0 text-neutral-400" />
+                                            )}
+                                        </>
+                                    )}
+                                    {item.kind === 'bookmark' && <Bookmark className="h-3.5 w-3.5 shrink-0 text-neutral-400" />}
+                                    {(item.kind === 'shortcut' || item.kind === 'aiTool') && (
+                                        <img
+                                            src={item.result?.favicon || faviconFor(item.result?.url ?? '')}
+                                            alt=""
+                                            className="h-3.5 w-3.5 shrink-0"
+                                        />
+                                    )}
+                                    <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                                    {item.kind !== 'search' && (
+                                        <span className="shrink-0 text-[10px] uppercase tracking-wide text-neutral-400">
+                                            {item.kind === 'tab' ? 'Tab' : item.kind === 'aiTool' ? 'AI tool' : item.kind}
+                                        </span>
+                                    )}
                                 </button>
                             </li>
                         ))}
@@ -265,6 +345,16 @@ export default function CommandBar() {
                             className="block w-full border-t border-black/10 px-4 py-2 text-left text-xs text-neutral-400 dark:border-white/10"
                         >
                             Showing Wikipedia suggestions — enable {currentEngine.label}'s own suggestions
+                        </button>
+                    )}
+                    {!sourcePermissions.tabs && (
+                        <button
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => chrome.permissions.request({ permissions: ['tabs'] })}
+                            className="block w-full border-t border-black/10 px-4 py-2 text-left text-xs text-neutral-400 dark:border-white/10"
+                        >
+                            Enable to also search your open tabs
                         </button>
                     )}
                 </div>

@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Daily Workspace brings tasks, notes, shortcuts, weather and focus tools together in a customizable new tab dashboard.">
+    <meta name="theme-color" content="#f7f8f4">
+    <title>Daily Workspace — Your everyday tools, one new tab</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232c493b'/%3E%3Cpath d='M8 8h6v6H8zm10 0h6v10h-6zM8 18h6v6H8zm10 4h6v2h-6z' fill='%23e6edce'/%3E%3C/svg%3E">
+    <style>
+        @font-face {
+            font-family: Jakarta;
+            src: url('assets/jakarta.woff2') format('woff2');
+            font-weight: 200 800;
+            font-display: swap
+        }
+
+        :root {
+            color-scheme: light;
+            --bg: #f7f8f4;
+            --paper: #fff;
+            --ink: #25382d;
+            --muted: #5d6a61;
+            --line: #dde2d8;
+            --accent: #2c493b;
+            --soft: #e6edce
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 24px
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: Jakarta, sans-serif;
+            font-size: 15px;
+            line-height: 1.7
+        }
+
+        a {
+            color: inherit;
+            text-underline-offset: 4px
+        }
+
+        a:focus-visible,
+        summary:focus-visible {
+            outline: 3px solid #537148;
+            outline-offset: 5px
+        }
+
+        a:hover {
+            color: #526d32
+        }
+
+        h1,
+        h2,
+        h3,
+        p {
+            margin: 0
+        }
+
+        h1,
+        h2,
+        h3 {
+            line-height: 1.2
+        }
+
+        h1 {
+            max-width: 820px;
+            margin: 20px auto;
+            font-size: clamp(36px, 5.3vw, 66px);
+            font-weight: 650;
+            letter-spacing: -.055em
+        }
+
+        h2 {
+            font-size: clamp(28px, 3vw, 38px);
+            font-weight: 600;
+            letter-spacing: -.04em
+        }
+
+        h3 {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: -.02em
+        }
+
+        .container {
+            width: min(1120px, calc(100% - 48px));
+            margin: auto
+        }
+
+        .skip {
+            position: absolute;
+            left: 20px;
+            top: -80px;
+            background: white;
+            padding: 10px;
+            z-index: 5
+        }
+
+        .skip:focus {
+            top: 12px
+        }
+
+        .header {
+            min-height: 94px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            border-bottom: 1px solid var(--line)
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -.03em
+        }
+
+        .brand svg {
+            width: 34px;
+            height: 34px;
+            flex: none
+        }
+
+        .nav {
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            font-size: 13px
+        }
+
+        .nav a {
+            text-decoration: none
+        }
+
+        .nav .nav-source {
+            padding: 7px 14px;
+            border: 1px solid var(--line);
+            border-radius: 8px
+        }
+
+        .hero {
+            text-align: center;
+            padding: 72px 0 42px
+        }
+
+        .eyebrow {
+            font-size: 11px;
+            font-weight: 650;
+            letter-spacing: .15em;
+            text-transform: uppercase;
+            color: var(--muted)
+        }
+
+        .hero>p {
+            max-width: 570px;
+            margin: 0 auto;
+            color: var(--muted);
+            font-size: 16px;
+            line-height: 1.85
+        }
+
+        .actions {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 28px
+        }
+
+        .button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            min-height: 47px;
+            padding: 11px 21px;
+            background: var(--accent);
+            color: #fff;
+            border: 1px solid var(--accent);
+            border-radius: 9px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 13px
+        }
+
+        .button:hover {
+            background: #3c5948;
+            color: #fff
+        }
+
+        .button.secondary {
+            background: transparent;
+            color: var(--ink);
+            border-color: var(--line)
+        }
+
+        .button.secondary:hover {
+            background: #edf0e8
+        }
+
+        .hero .quiet {
+            font-size: 12px;
+            margin-top: 18px
+        }
+
+        .preview {
+            margin: 0;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            overflow: hidden;
+            background: var(--paper);
+            box-shadow: 0 18px 50px #263c2a09
+        }
+
+        .browser-bar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 37px;
+            padding: 0 16px;
+            border-bottom: 1px solid var(--line);
+            background: #edf0e9
+        }
+
+        .browser-bar i {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #c2cbbd
+        }
+
+        .browser-bar span {
+            font-size: 10px;
+            color: #62705e;
+            margin-left: 12px
+        }
+
+        .preview img {
+            display: block;
+            width: 100%;
+            height: auto
+        }
+
+        .preview-caption {
+            text-align: center;
+            font-size: 11px;
+            color: var(--muted);
+            margin: 14px 0 0
+        }
+
+        .section {
+            padding: 76px 0
+        }
+
+        .section-heading {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 30px;
+            margin-bottom: 30px
+        }
+
+        .section-heading>p {
+            max-width: 355px;
+            color: var(--muted);
+            font-size: 13px
+        }
+
+        .section-heading .eyebrow {
+            margin-bottom: 12px
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px
+        }
+
+        .feature {
+            padding: 26px;
+            background: var(--paper);
+            border: 1px solid var(--line);
+            border-radius: 13px
+        }
+
+        .feature svg {
+            width: 24px;
+            height: 24px;
+            color: var(--accent);
+            margin-bottom: 20px
+        }
+
+        .feature p {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 12px;
+            line-height: 1.8
+        }
+
+        .feature.featured {
+            background: var(--soft)
+        }
+
+        .personal {
+            display: grid;
+            grid-template-columns: 1fr 1.05fr;
+            align-items: center;
+            gap: 55px;
+            padding: 38px;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: #edf0e9
+        }
+
+        .personal p {
+            font-size: 14px;
+            color: var(--muted);
+            margin-top: 18px
+        }
+
+        .personal .eyebrow {
+            margin: 0 0 14px
+        }
+
+        .personal img {
+            width: 100%;
+            height: auto;
+            display: block;
+            border: 1px solid #43534b;
+            border-radius: 9px
+        }
+
+        .personal a {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 20px
+        }
+
+        .faq {
+            max-width: 760px;
+            margin: auto
+        }
+
+        .faq h2 {
+            margin-bottom: 26px
+        }
+
+        details {
+            border-bottom: 1px solid var(--line);
+            padding: 18px 0
+        }
+
+        summary {
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            list-style-position: outside;
+            margin-left: 18px;
+            padding-left: 3px
+        }
+
+        details p {
+            font-size: 13px;
+            color: var(--muted);
+            margin: 14px 0 0 21px;
+            line-height: 1.9
+        }
+
+        .install {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 35px;
+            padding: 38px;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: var(--soft);
+            margin-bottom: 64px
+        }
+
+        .install h2 {
+            font-size: 29px
+        }
+
+        .install p {
+            font-size: 13px;
+            max-width: 540px;
+            margin-top: 14px;
+            color: #48573d
+        }
+
+        .install .actions {
+            flex-shrink: 0;
+            margin: 0;
+            flex-direction: column
+        }
+
+        .footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            border-top: 1px solid var(--line);
+            padding: 25px 0 30px;
+            font-size: 11px;
+            color: var(--muted)
+        }
+
+        .footer div {
+            display: flex;
+            gap: 22px
+        }
+
+        .footer a {
+            text-decoration: none
+        }
+
+        .footer a:hover {
+            text-decoration: underline
+        }
+
+        @media(max-width:760px) {
+            .container {
+                width: calc(100% - 32px)
+            }
+
+            .header {
+                min-height: 78px
+            }
+
+            .nav {
+                gap: 16px
+            }
+
+            .nav-source {
+                display: none
+            }
+
+            .hero {
+                padding-top: 50px
+            }
+
+            .hero>p {
+                font-size: 14px
+            }
+
+            .section {
+                padding: 52px 0
+            }
+
+            .section-heading {
+                display: block
+            }
+
+            .section-heading>p {
+                margin-top: 15px;
+                max-width: none
+            }
+
+            .features {
+                grid-template-columns: repeat(2, minmax(0, 1fr))
+            }
+
+            .personal {
+                grid-template-columns: 1fr;
+                gap: 28px;
+                padding: 28px
+            }
+
+            .install {
+                display: block;
+                padding: 28px;
+                margin-bottom: 40px
+            }
+
+            .install .actions {
+                flex-direction: row;
+                justify-content: start;
+                margin-top: 25px
+            }
+
+            .footer {
+                align-items: start
+            }
+
+            .footer div {
+                gap: 12px;
+                flex-wrap: wrap;
+                justify-content: end
+            }
+        }
+
+        @media(max-width:460px) {
+            .brand {
+                font-size: 13px;
+                gap: 8px
+            }
+
+            .brand svg {
+                width: 28px;
+                height: 28px
+            }
+
+            .nav {
+                font-size: 12px;
+                gap: 14px
+            }
+
+            .nav a[href='#features'] {
+                display: none
+            }
+
+            .features {
+                grid-template-columns: 1fr
+            }
+
+            .feature {
+                padding: 24px
+            }
+
+            .hero {
+                padding-bottom: 30px
+            }
+
+            h1 {
+                font-size: 38px
+            }
+
+            .personal,
+            .install {
+                padding: 23px
+            }
+
+            .footer {
+                flex-direction: column;
+                gap: 12px
+            }
+
+            .footer div {
+                justify-content: start
+            }
+
+            .preview {
+                border-radius: 10px
+            }
+        }
+
+        @media(prefers-reduced-motion:reduce) {
+            html {
+                scroll-behavior: auto
+            }
+        }
+  
+    /* Bento composition: keep the page content in independent, varied panels. */
+    .hero-bento{display:grid;grid-template-columns:1fr 1.2fr;gap:18px;margin-top:28px;align-items:stretch}
+    .hero{min-width:0;text-align:left;padding:42px 34px;background:var(--soft);border:1px solid #dbe3c2;border-radius:24px;display:flex;flex-direction:column;justify-content:center}
+    .hero h1{font-size:clamp(36px,4.2vw,55px);margin:22px 0;letter-spacing:-.055em}
+    .hero>p{font-size:14px;margin:0;max-width:440px}.hero .actions{justify-content:flex-start;gap:10px}.hero .button{padding:11px 15px;font-size:12px}.hero .button.secondary{border-color:#c4d0b1}.hero .quiet{font-size:11px;margin-top:22px}
+    .preview{min-width:0;border-radius:24px;box-shadow:none;background:#edf0e9;display:flex;flex-direction:column;justify-content:center;position:relative;padding:54px 18px 24px}
+    .browser-bar{position:absolute;top:0;left:0;right:0;height:38px;background:transparent}.preview img{border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 28px #263c2a0d}.preview-caption{font-size:10px;margin:20px 8px 0;line-height:1.7}
+    .section{padding:62px 0}.features{grid-template-columns:repeat(12,minmax(0,1fr));gap:18px}
+    .feature{border-radius:22px;padding:28px;position:relative;min-width:0;transition:transform .24s ease,box-shadow .24s ease,border-color .24s ease}
+    .feature:nth-child(1){grid-column:1 / 6;grid-row:1 / 3;display:flex;flex-direction:column;justify-content:flex-start;background:#e6edce}
+    .feature:nth-child(2){grid-column:6 / 13;grid-row:1;background:#edf0e9}
+    .feature:nth-child(3){grid-column:6 / 10;grid-row:2}
+    .feature:nth-child(4){grid-column:10 / 13;grid-row:2;background:#f1f0e6}
+    .feature:nth-child(5){grid-column:1 / 8;grid-row:3}
+    .feature:nth-child(6){grid-column:8 / 13;grid-row:3;background:#edf0e9}
+    .feature h3{font-size:20px;max-width:330px;line-height:1.35}.feature p{max-width:440px}.feature:nth-child(1) h3{font-size:29px;letter-spacing:-.04em;max-width:290px}.feature svg{flex-shrink:0;transition:transform .3s ease}
+    .shortcut-demo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:auto 0 0;padding-top:32px}.shortcut-demo>span{display:flex;align-items:center;gap:12px;padding:16px 12px;background:#ffffff85;border:1px solid #d4ddbd;border-radius:13px;font-size:12px}.shortcut-demo i{display:grid;place-items:center;width:33px;height:33px;border:1px solid #d3dbca;border-radius:9px;background:#fff;color:var(--accent);font-size:13px;font-weight:650;font-style:normal;flex:none}
+    .personal{background:transparent;border:0;border-radius:0;padding:0;gap:18px;align-items:stretch}.personal>div{background:#edf0e9;border:1px solid var(--line);border-radius:22px;padding:36px;display:flex;flex-direction:column;justify-content:center}.personal>img{height:100%;min-height:270px;object-fit:contain;padding:22px;background:#25382d;border-radius:22px}.personal a{align-self:flex-start}
+    .faq{max-width:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}.faq h2{grid-column:1 / -1;margin-bottom:10px}.faq details{margin:0;background:var(--paper);padding:22px;border:1px solid var(--line);border-radius:16px}.faq summary{margin-left:16px;font-size:13px}.faq details p{margin-left:0;font-size:12px}.install{border-radius:22px;margin-bottom:38px}
+    .button,.nav-source{transition:transform .2s ease,background-color .2s ease,box-shadow .2s ease}.button>span{display:inline-block;transition:transform .2s ease}
+    @media(hover:hover){.feature:hover{transform:translateY(-4px);box-shadow:0 12px 26px #263c2a09;border-color:#b9c9a7}.feature:hover>svg{transform:translateY(-2px) rotate(-6deg)}.button:hover,.nav-source:hover{transform:translateY(-2px);box-shadow:0 5px 12px #263c2a10}.button:hover>span{transform:translate(2px,-2px)}}
+    @keyframes settle-in{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes detail-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+    @media(prefers-reduced-motion:no-preference){.hero{animation:settle-in .65s ease both}.preview{animation:settle-in .75s .12s ease both}details[open]>p{animation:detail-in .2s ease}.reveal-pending{opacity:0;transform:translateY(18px)}.reveal-enter{animation:settle-in .6s ease both;animation-delay:var(--reveal-delay,0ms)}}
+    @media(max-width:1000px){.hero-bento{grid-template-columns:1fr 1fr}.hero{padding:30px 26px}.hero h1{font-size:40px}.feature{padding:24px}.feature:nth-child(4) h3{font-size:18px}.shortcut-demo{gap:9px}.shortcut-demo>span{flex-direction:column;padding:14px 8px}.personal>div{padding:28px}}
+    @media(max-width:760px){.hero-bento{grid-template-columns:1fr;gap:14px;margin-top:20px}.hero{padding:34px}.hero h1{font-size:46px}.hero>p{max-width:540px}.preview{padding:50px 16px 22px}.features{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.feature:nth-child(n){grid-column:auto;grid-row:auto}.feature:nth-child(1),.feature:nth-child(2){grid-column:1 / -1}.feature:nth-child(1) h3{max-width:none;font-size:25px}.shortcut-demo{grid-template-columns:repeat(4,minmax(0,1fr));padding-top:24px}.personal{grid-template-columns:1fr;gap:14px}.personal>img{height:auto;min-height:0;padding:18px}.personal>div{padding:30px}.faq{gap:12px}.faq details{padding:18px}.section{padding:46px 0}}
+    @media(max-width:460px){.hero{padding:28px 23px;border-radius:20px}.hero h1{font-size:38px}.hero .eyebrow{font-size:9px}.hero .actions{flex-direction:column;align-items:stretch}.preview{border-radius:20px}.features{grid-template-columns:1fr}.feature:nth-child(n){grid-column:auto;grid-row:auto}.shortcut-demo{gap:7px}.shortcut-demo>span{font-size:10px;padding:12px 5px}.shortcut-demo i{width:29px;height:29px}.faq{grid-template-columns:1fr}.personal>div{padding:25px}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation:none!important;transition:none!important}.reveal-pending{opacity:1;transform:none}.feature:hover,.button:hover,.nav-source:hover,.feature:hover>svg,.button:hover>span{transform:none}}
+  </style>
+</head>
+<body>
+    <a class="skip" href="#main">Skip to content</a>
+    <div class="container">
+        <header class="header">
+            <a class="brand" href="#" aria-label="Daily Workspace home"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+                    <rect width="32" height="32" rx="8" fill="#2c493b" />
+                    <path d="M8 8h6v6H8zm10 0h6v10h-6zM8 18h6v6H8zm10 4h6v2h-6z" fill="#e6edce" />
+                </svg>Daily Workspace</a>
+            <nav class="nav" aria-label="Main navigation"><a href="#features">Features</a><a href="#get-started">Get started</a><a class="nav-source" href="https://github.com/adhikari-dikshant/tab-extension">GitHub ↗</a></nav>
+        </header>
+        <main id="main">
+            <div class="hero-bento">
+      <section class="hero" aria-labelledby="hero-title">
+                <span class="eyebrow">Your everyday tools. One new tab.</span>
+                <h1 id="hero-title">A better place<br>to start your day.</h1>
+                <p>Your favorite sites, things to do, and ideas to keep. Daily Workspace puts them together in a new tab that feels like yours.</p>
+                <div class="actions"><a class="button" href="#get-started">Get Daily Workspace <span aria-hidden="true">↗</span></a><a class="button secondary" href="#features">Explore the features</a></div>
+                <p class="quiet">Free and open source · No account needed</p>
+            </section>
+            <figure class="preview" aria-label="Daily Workspace dashboard preview">
+                <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i><span>New Tab</span></div>
+                <img src="assets/dashboard-light.png" width="1440" height="900" alt="Daily Workspace in light mode, showing a greeting, search, shortcuts, tasks, weather, most visited sites, notes and screen time." fetchpriority="high">
+            <figcaption class="preview-caption">The dashboard, with sample data. Arrange it your way.</figcaption>
+            </figure>
+            </div>
+            <section class="section" id="features" aria-labelledby="features-title">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">A little more useful</p>
+                        <h2 id="features-title">The essentials, within reach.</h2>
+                    </div>
+                    <p>Less switching between tools. More room for whatever you opened your browser to do.</p>
+                </div>
+                <div class="features">
+                    <article class="feature featured"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                            <rect x="4" y="4" width="6" height="6" rx="1" />
+                            <rect x="14" y="4" width="6" height="6" rx="1" />
+                            <rect x="4" y="14" width="6" height="6" rx="1" />
+                            <rect x="14" y="14" width="6" height="6" rx="1" />
+                        </svg>
+                        <h3>Your sites, one click away</h3>
+                        <p>Keep shortcuts, bookmarks, apps, and your most visited pages close at hand.</p>
+                        <div class="shortcut-demo" aria-hidden="true"><span><i>M</i>Mail</span><span><i>D</i>Drive</span><span><i>C</i>Calendar</span><span><i>N</i>Notes</span></div>
+                    </article>
+                    <article class="feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                            <path d="m4 7 2 2 4-4m-6 12 2 2 4-4m3-7h7m-7 10h7" />
+                        </svg>
+                        <h3>A clear plan for today</h3>
+                        <p>Add tasks, set due dates, and repeat daily or weekly routines. Start a focus timer when it’s time to get going.</p>
+                    </article>
+                    <article class="feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                            <path d="M13 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8M9 15l1-4 8-8 3 3-8 8-4 1Z" />
+                        </svg>
+                        <h3>Somewhere for your ideas</h3>
+                        <p>Jot down a thought or save a useful link. Notes save automatically, with important ones pinned at the top.</p>
+                    </article>
+                    <article class="feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                            <circle cx="12" cy="12" r="4" />
+                            <path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2" />
+                        </svg>
+                        <h3>A quick look at your day</h3>
+                        <p>Check the time and local weather, see your browsing time, and enjoy a daily quote.</p>
+                    </article>
+                    <article class="feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                            <rect x="3" y="7" width="15" height="14" rx="2" />
+                            <path d="M7 3h12a2 2 0 0 1 2 2v12M3 11h15" />
+                        </svg>
+                        <h3>Pick up where you left off</h3>
+                        <p>Reopen recently closed tabs or save a group of pages as a workspace for your next session.</p>
+                    </article>
+                    <article class="feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                            <path d="m12 3 8 3v6c0 4-4 7-8 9-4-2-8-5-8-9V6l8-3Z" />
+                            <path d="m8 12 3 3 5-6" />
+                        </svg>
+                        <h3>Your setup stays with you</h3>
+                        <p>Tasks, notes, and settings are saved in your browser. Export a backup whenever you need one.</p>
+                    </article>
+                </div>
+            </section>
+            <section class="personal" aria-labelledby="personal-title">
+                <div>
+                    <p class="eyebrow">Make yourself comfortable</p>
+                    <h2 id="personal-title">A workspace with<br>your preferences.</h2>
+                    <p>Choose light, dark, or your browser’s theme. Pick an accent color, rearrange the cards, and keep the tools you use most.</p><a href="#get-started">Make it yours <span aria-hidden="true">↗</span></a>
+                </div>
+                <img src="assets/dashboard-dark.png" width="1440" height="900" loading="lazy" alt="The same customizable bento dashboard in dark mode.">
+            </section>
+            <section class="section faq-section" aria-labelledby="faq-title">
+                <div class="faq">
+                    <h2 id="faq-title">A few things to know.</h2>
+                    <details>
+                        <summary>Do I need to create an account?</summary>
+                        <p>No. Daily Workspace works without an account or subscription. Your dashboard data is stored in your browser.</p>
+                    </details>
+                    <details id="privacy">
+                        <summary>What stays local, and what goes online?</summary>
+                        <p>Settings, tasks, notes, saved workspaces, and screen-time records are stored locally. Online features contact third parties: weather sends location coordinates to weather and place-name services; search suggestions send typed queries to suggestion providers; site icons may be fetched from external icon services. Daily Workspace does not include analytics or an account system.</p>
+                    </details>
+                    <details>
+                        <summary>Can I choose which tools appear?</summary>
+                        <p>Yes. Use Customize to show or hide cards and sidebar tools, adjust the appearance, and rearrange your dashboard. Optional browser permissions are requested for features such as bookmarks and screen time.</p>
+                    </details>
+                    <details>
+                        <summary>Can I back up my setup?</summary>
+                        <p>Use Customize → Data to export your dashboard. Keep the backup file somewhere safe; importing a backup replaces your current saved setup.</p>
+                    </details>
+                </div>
+            </section>
+            <section class="install" id="get-started" aria-labelledby="install-title">
+                <div>
+                    <p class="eyebrow">Start with your next tab</p>
+                    <h2 id="install-title">Get Daily Workspace.</h2>
+                    <p>Follow the project’s setup guide for Chromium browsers or Firefox. You’ll find the source code and installation steps on GitHub.</p>
+                </div>
+                <div class="actions"><a class="button" href="https://github.com/adhikari-dikshant/tab-extension#-installation">Installation guide <span aria-hidden="true">↗</span></a><a class="button secondary" href="https://github.com/adhikari-dikshant/tab-extension">View source on GitHub</a></div>
+            </section>
+        </main>
+        <footer class="footer"><span>Daily Workspace · By Dikshant Singh Adhikari</span>
+            <div><a href="#privacy">Privacy details</a><a href="https://github.com/adhikari-dikshant/tab-extension/issues">Support</a><a href="https://github.com/adhikari-dikshant/tab-extension/blob/main/LICENSE">GPL-3.0 license</a></div>
+        </footer>
+    </div>
+  <script>
+    // Content remains visible without JavaScript; animate each panel only once.
+    (() => {
+      const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+      if (motion.matches || !('IntersectionObserver' in window)) return;
+      const panels = document.querySelectorAll('.feature, .personal > *, .faq details, .install');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(({ target, isIntersecting }) => {
+          if (!isIntersecting) return;
+          target.classList.remove('reveal-pending');
+          target.classList.add('reveal-enter');
+          target.addEventListener('animationend', () => target.classList.remove('reveal-enter'), { once: true });
+          observer.unobserve(target);
+        });
+      }, { threshold: 0.08 });
+      panels.forEach((panel, index) => {
+        panel.style.setProperty('--reveal-delay', `${(index % 3) * 65}ms`);
+        panel.classList.add('reveal-pending');
+        observer.observe(panel);
+      });
+      motion.addEventListener('change', () => {
+        if (!motion.matches) return;
+        observer.disconnect();
+        panels.forEach(panel => panel.classList.remove('reveal-pending', 'reveal-enter'));
+      });
+    })();
+  </script>
+</body>
+</html>

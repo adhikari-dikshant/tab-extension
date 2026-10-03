@@ -13,6 +13,7 @@ dist-firefox
 dist-ssr
 artifacts
 output
+branding
 *.local
 *.zip
 

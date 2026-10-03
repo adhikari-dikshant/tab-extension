@@ -4,7 +4,7 @@
 
 ![React](https://img.shields.io/badge/React-19-149eca?logo=react&logoColor=white)![TypeScript](https://img.shields.io/badge/TypeScript-6-3178c6?logo=typescript&logoColor=white)![Vite](https://img.shields.io/badge/Vite-8-646cff?logo=vite&logoColor=white)![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38bdf8?logo=tailwindcss&logoColor=white)![Manifest V3](https://img.shields.io/badge/Manifest-V3-4285f4?logo=googlechrome&logoColor=white)![License](https://img.shields.io/badge/License-GPL--3.0-blue.svg)![Version](https://img.shields.io/github/v/tag/adhikari-dikshant/tab-extension?label=version&color=22c55e)
 
-[Features](#-features) • [Installation](#-installation) • [Development](#-development) • [Permissions](#-permissions) • [Privacy](#-privacy) • [Changelog](./CHANGELOG.md) • [Contributing](#-contributing) • [License](#-license)
+**[📋 Changelog](./CHANGELOG.md)**
 
 ![Daily Workspace — light theme](public/bento-light.png)![Daily Workspace — dark theme](public/bento-dark.png)
 

@@ -2,9 +2,11 @@ import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { AppWindowIcon as AppWindow } from '@phosphor-icons/react/dist/csr/AppWindow'
 import { BookmarkSimpleIcon as Bookmark } from '@phosphor-icons/react/dist/csr/BookmarkSimple'
+import { ChecksIcon as Checks } from '@phosphor-icons/react/dist/csr/Checks'
+import { NotePencilIcon as NotePencil } from '@phosphor-icons/react/dist/csr/NotePencil'
 import { MicrophoneIcon as Mic } from '@phosphor-icons/react/dist/csr/Microphone'
 import { MagnifyingGlassIcon as Search } from '@phosphor-icons/react/dist/csr/MagnifyingGlass'
-import { DEFAULT_SETTINGS, faviconFor, type SearchEngine } from '../lib/storage'
+import { createTodo, DEFAULT_SETTINGS, faviconFor, type SearchEngine } from '../lib/storage'
 import { useStorageValue } from '../lib/useStorageValue'
 import { directUrlFor, parseBookmarkTarget, parseCommand, searchUrl } from '../lib/commandParser'
 import { fetchSuggestions, hasSuggestPermission, hostPermissionFor, requestSuggestPermission } from '../lib/searchSuggestions'
@@ -30,6 +32,7 @@ export default function CommandBar() {
     const [todos, setTodos] = useStorageValue('todos', [])
     const [shortcuts] = useStorageValue('shortcuts', [])
     const [aiTools] = useStorageValue('aiTools', [])
+    const [notes] = useStorageValue('notes', [])
     const [value, setValue] = useState('')
     const [items, setItems] = useState<ListItem[]>([])
     const [showSuggestions, setShowSuggestions] = useState(false)
@@ -92,6 +95,10 @@ export default function CommandBar() {
                 bookmarksGranted: sourcePermissions.bookmarks,
                 shortcuts,
                 aiTools,
+                // Only offer records whose card is actually on the dashboard: selecting one reveals
+                // it in place, and a disabled card has nothing mounted to reveal it in.
+                todos: settings.widgetsEnabled.includes('todo') ? todos : [],
+                notes: settings.widgetsEnabled.includes('notes') ? notes : [],
             })
             if (controller.signal.aborted) return
 
@@ -113,7 +120,29 @@ export default function CommandBar() {
             controller.abort()
             clearTimeout(timer)
         }
-    }, [value, settings.searchEngine, settings.searchSuggestionsEnabled, sourcePermissions, shortcuts, aiTools])
+    }, [value, settings.searchEngine, settings.searchSuggestionsEnabled, settings.widgetsEnabled, sourcePermissions, shortcuts, aiTools, todos, notes])
+
+    // A capture made from another page has no dashboard open to toast in; when one *is* open, the
+    // service worker forwards the message here so the feedback is consistent either way.
+    useEffect(() => {
+        const listener = (message: unknown) => {
+            if (typeof message === 'object' && message !== null && (message as { type?: string }).type === 'capture:done') {
+                showToast(String((message as { message?: string }).message ?? 'Captured'))
+            }
+        }
+        chrome.runtime.onMessage.addListener(listener)
+        return () => chrome.runtime.onMessage.removeListener(listener)
+    }, [showToast])
+
+    // The Alt+Shift+K command opens a fresh dashboard tab and leaves a marker; consume it once so a
+    // later reload of the same tab doesn't steal focus again.
+    useEffect(() => {
+        void chrome.storage.local.get('capture:searchRequest').then((result) => {
+            if (!result['capture:searchRequest']) return
+            void chrome.storage.local.remove('capture:searchRequest')
+            inputRef.current?.focus()
+        })
+    }, [])
 
     useEffect(() => {
         let cancelled = false
@@ -136,6 +165,20 @@ export default function CommandBar() {
             return
         }
         const result = item.result!
+        // Tasks and notes already live on this page, so they are revealed in place rather than
+        // navigated to. The owning components listen for these events.
+        if (result.kind === 'todo') {
+            window.dispatchEvent(new CustomEvent('dashboard:reveal-todo', { detail: result.recordId }))
+            setValue('')
+            setShowSuggestions(false)
+            return
+        }
+        if (result.kind === 'note') {
+            window.dispatchEvent(new CustomEvent('dashboard:open-note', { detail: result.recordId }))
+            setValue('')
+            setShowSuggestions(false)
+            return
+        }
         if (result.kind === 'tab' && result.tabId !== undefined && result.windowId !== undefined) {
             chrome.tabs.update(result.tabId, { active: true })
             chrome.windows.update(result.windowId, { focused: true })
@@ -149,10 +192,7 @@ export default function CommandBar() {
         if (!command) return
 
         if (command.type === 'todo') {
-            setTodos([
-                ...todos,
-                { id: crypto.randomUUID(), text: command.text, done: false, pinned: false, createdAt: Date.now() },
-            ])
+            setTodos([...todos, createTodo(command.text)])
             showToast(`Added to-do: "${command.text}"`)
             setValue('')
             return
@@ -320,6 +360,8 @@ export default function CommandBar() {
                                         </>
                                     )}
                                     {item.kind === 'bookmark' && <Bookmark className="h-3.5 w-3.5 shrink-0 text-neutral-400" />}
+                                    {item.kind === 'todo' && <Checks className="h-3.5 w-3.5 shrink-0 text-neutral-400" />}
+                                    {item.kind === 'note' && <NotePencil className="h-3.5 w-3.5 shrink-0 text-neutral-400" />}
                                     {(item.kind === 'shortcut' || item.kind === 'aiTool') && (
                                         <img
                                             src={item.result?.favicon || faviconFor(item.result?.url ?? '')}
@@ -327,10 +369,15 @@ export default function CommandBar() {
                                             className="h-3.5 w-3.5 shrink-0"
                                         />
                                     )}
-                                    <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                                    <span className="min-w-0 flex-1 truncate">
+                                        {item.label}
+                                        {item.result?.detail && (
+                                            <span className="ml-2 text-xs text-neutral-400">{item.result.detail}</span>
+                                        )}
+                                    </span>
                                     {item.kind !== 'search' && (
                                         <span className="shrink-0 text-[10px] uppercase tracking-wide text-neutral-400">
-                                            {item.kind === 'tab' ? 'Tab' : item.kind === 'aiTool' ? 'AI tool' : item.kind}
+                                            {item.kind === 'tab' ? 'Tab' : item.kind === 'aiTool' ? 'AI tool' : item.kind === 'todo' ? 'Task' : item.kind}
                                         </span>
                                     )}
                                 </button>

@@ -2,6 +2,7 @@ import { useUndoDelete } from '../lib/useUndoDelete'
 import { useState } from 'react'
 import { PlusIcon as Plus } from '@phosphor-icons/react/dist/csr/Plus'
 import { ShortcutIcon } from './ShortcutIcon'
+import { createShortcut, touch } from '../lib/storage'
 import { useStorageValue } from '../lib/useStorageValue'
 
 /** Shared editor for a stored list of {id,label,url,icon?} links — used by both the Shortcuts
@@ -19,16 +20,16 @@ export function EditableLinkListPanel({
     const [newUrl, setNewUrl] = useState('')
 
     const updateLabel = (id: string, label: string) => {
-        setItems(items.map((s) => (s.id === id ? { ...s, label } : s)))
+        setItems(items.map((s) => (s.id === id ? touch({ ...s, label }) : s)))
     }
 
     const updateUrlDraft = (id: string, url: string) => {
-        setItems(items.map((s) => (s.id === id ? { ...s, url } : s)))
+        setItems(items.map((s) => (s.id === id ? touch({ ...s, url }) : s)))
     }
 
     const commitUrl = (id: string, url: string) => {
         const normalized = /^https?:\/\//i.test(url) ? url : `https://${url}`
-        setItems(items.map((s) => (s.id === id ? { ...s, url: normalized } : s)))
+        setItems(items.map((s) => (s.id === id ? touch({ ...s, url: normalized }) : s)))
     }
 
     const undoDelete = useUndoDelete()
@@ -43,7 +44,7 @@ export function EditableLinkListPanel({
     const saveAdd = () => {
         if (!newLabel.trim() || !newUrl.trim()) return
         const normalized = /^https?:\/\//i.test(newUrl) ? newUrl : `https://${newUrl}`
-        setItems([...items, { id: crypto.randomUUID(), label: newLabel.trim(), url: normalized }])
+        setItems([...items, createShortcut(newLabel.trim(), normalized)])
         setAdding(false)
     }
 

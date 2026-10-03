@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from 'react'
 import { HouseSimpleIcon as House } from '@phosphor-icons/react/dist/csr/HouseSimple'
 import Clock from '../components/Clock'
+import { TodayDate, WeatherReading } from '../components/DateWeather'
 import Greeting from '../components/Greeting'
 import CustomTextWidget from '../components/CustomTextWidget'
 import CommandBar from '../components/CommandBar'
@@ -13,7 +14,9 @@ import SettingsButton from '../components/SettingsButton'
 import DashboardGrid from '../components/DashboardGrid'
 import NotesButton from '../components/NotesButton'
 import FocusButton from '../components/FocusButton'
+import WorkspacesButton from '../components/WorkspacesButton'
 import { DEFAULT_SETTINGS, ensureDefaultAiTools, ensureDefaultShortcuts } from '../lib/storage'
+import { runMigrations } from '../lib/migrations'
 import { useStorageValue } from '../lib/useStorageValue'
 import { useAppearance } from '../lib/useAppearance'
 
@@ -26,6 +29,7 @@ export default function NewTab() {
     const [settings] = useStorageValue('settings', DEFAULT_SETTINGS)
 
     useEffect(() => {
+        void runMigrations()
         void ensureDefaultShortcuts()
         void ensureDefaultAiTools()
     }, [])
@@ -43,8 +47,9 @@ export default function NewTab() {
                     {isEnabled('bookmarks') && <RailItem label="Bookmarks"><BookmarksButton /></RailItem>}
                     {isEnabled('googleApps') && <RailItem label="Apps"><GoogleAppsButton /></RailItem>}
                     {isEnabled('aiTools') && <RailItem label="AI tools"><AiToolsButton /></RailItem>}
-                    {settings.notesEnabled && <RailItem label="Notes"><NotesButton /></RailItem>}
+                    {isEnabled('notes') && <RailItem label="Notes"><NotesButton global /></RailItem>}
                     {isEnabled('recentlyClosed') && <RailItem label="Recent"><RecentlyClosedButton /></RailItem>}
+                    {isEnabled('workspaces') && <RailItem label="Workspaces"><WorkspacesButton /></RailItem>}
                 </div>
                 <RailItem label="Customize"><SettingsButton /></RailItem>
             </aside>
@@ -57,7 +62,20 @@ export default function NewTab() {
                         {isEnabled('quotes') && <QuoteWidget />}
                         {isEnabled('customText') && settings.customText.trim() && <CustomTextWidget />}
                     </div>
-                    {(isEnabled('clock') || settings.focusEnabled) && <div className="welcome-clock">{isEnabled('clock') && <Clock />}{settings.focusEnabled && <FocusButton />}</div>}
+                    <div className="welcome-clock">
+                        <div className="welcome-now">
+                            <div className="now-time">
+                                {isEnabled('clock') && <Clock />}
+                                <TodayDate />
+                            </div>
+                            {(isEnabled('weather') || settings.focusEnabled) && (
+                                <div className="now-side">
+                                    <WeatherReading />
+                                    {settings.focusEnabled && <FocusButton />}
+                                </div>
+                            )}
+                        </div>
+                    </div>
                     <div className="welcome-orbit orbit-one" aria-hidden="true" /><div className="welcome-orbit orbit-two" aria-hidden="true" />
                 </section>
 

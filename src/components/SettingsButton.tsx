@@ -10,6 +10,7 @@ import { AccentColorPicker } from './AccentColorPicker'
 import { WallpaperPicker } from './WallpaperPicker'
 import { OpacitySlider } from './OpacitySlider'
 import BackupRestorePanel from './BackupRestorePanel'
+import OverlaySettings from './OverlaySettings'
 import { DEFAULT_SETTINGS, type Settings as SettingsType, type Theme, type WidgetId } from '../lib/storage'
 import { useToast } from '../lib/useToast'
 import { useStorageValue } from '../lib/useStorageValue'
@@ -119,7 +120,9 @@ export default function SettingsButton() {
         >
             <SettingsAccordion>
                 <AccordionSection value="productivity" title="Productivity">
-                    <SettingRow label="Quick notes" description="Autosaving notes in their own dashboard card"><Switch label="Quick notes" checked={settings.notesEnabled} onCheckedChange={(notesEnabled) => setSettings({ ...settings, notesEnabled })} /></SettingRow>
+                    <SettingRow label="Quick notes" description="Autosaving notes in their own dashboard card"><Switch label="Quick notes" checked={isWidgetOn('notes')} onCheckedChange={() => toggleWidget('notes')} /></SettingRow>
+                    <SettingRow label="Saved workspaces" description="Save a window's tabs and reopen them together"><Switch label="Saved workspaces" checked={isWidgetOn('workspaces')} onCheckedChange={() => toggleWidget('workspaces')} /></SettingRow>
+                    <OverlaySettings />
                     <SettingRow label="Focus timer" description="Task-linked focus and break sessions"><Switch label="Focus timer" checked={settings.focusEnabled} onCheckedChange={(focusEnabled) => setSettings({ ...settings, focusEnabled })} /></SettingRow>
                     <SettingRow label="Desktop reminders" description="Focus completion and due tasks at 9 AM">
                         <Switch label="Desktop reminders" checked={settings.desktopReminders} onCheckedChange={async (enabled) => {
@@ -300,6 +303,9 @@ export default function SettingsButton() {
                 </AccordionSection>
 
                 <AccordionSection value="weather" title="Weather">
+                    <SettingRow label="Show temperature" description="Beside the date in the welcome strip">
+                        <Switch checked={isWidgetOn('weather')} onCheckedChange={() => toggleWidget('weather')} />
+                    </SettingRow>
                     <SegmentedRow
                         label="Units"
                         value={settings.tempUnit}

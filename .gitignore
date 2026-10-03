@@ -12,6 +12,7 @@ dist
 dist-firefox
 dist-ssr
 artifacts
+output
 *.local
 *.zip
 

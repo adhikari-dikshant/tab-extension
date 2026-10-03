@@ -4,7 +4,7 @@ import { useStorageValue } from '../lib/useStorageValue'
 import { changeStored, safeWebUrl } from '../lib/productivity'
 import { useUndoDelete } from '../lib/useUndoDelete'
 import { useToast } from '../lib/useToast'
-import type { Workspace } from '../lib/storage'
+import { createWorkspace, type Workspace } from '../lib/storage'
 
 export default function WorkspacesPanel() {
     const [workspaces] = useStorageValue('workspaces', [])
@@ -23,7 +23,7 @@ export default function WorkspacesPanel() {
             const tabs = await chrome.tabs.query({ currentWindow: true })
             const saved = tabs.filter((tab) => !tab.incognito && tab.url && safeWebUrl(tab.url)).map((tab) => ({ title: tab.title || tab.url!, url: tab.url!, pinned: tab.pinned }))
             if (!saved.length) { setError('There are no regular web tabs to save in this window.'); return }
-            await changeStored('workspaces', [], (items) => [...items, { id: crypto.randomUUID(), name: name.trim(), tabs: saved, createdAt: Date.now() }])
+            await changeStored('workspaces', [], (items) => [...items, createWorkspace(name.trim(), saved)])
             setName(''); toast(`Saved ${saved.length} tabs`)
         } catch { setError('Could not save these tabs. Please try again.') }
         finally { setBusy(false) }

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Pagination } from '../Pagination'
 import { BentoCard } from '../BentoGrid'
 import { CardEmpty, CardSkeleton } from '../CardState'
@@ -10,11 +10,17 @@ import { PlusIcon } from '@phosphor-icons/react/dist/csr/Plus'
 import { CalendarBlankIcon } from '@phosphor-icons/react/dist/csr/CalendarBlank'
 import { TimerIcon } from '@phosphor-icons/react/dist/csr/Timer'
 import { TrashIcon } from '@phosphor-icons/react/dist/csr/Trash'
+import { LinkSimpleIcon } from '@phosphor-icons/react/dist/csr/LinkSimple'
 import { useStorageValue } from '../../lib/useStorageValue'
-import { DEFAULT_SETTINGS, type Todo } from '../../lib/storage'
+import { createTodo, DEFAULT_SETTINGS, touch, type Todo } from '../../lib/storage'
 import { changeStored, completeTodo, localDate, startFocus } from '../../lib/productivity'
 import { useUndoDelete } from '../../lib/useUndoDelete'
 import { useToast } from '../../lib/useToast'
+
+/** Host only: a captured task shows where it came from without the row turning into a URL. */
+function sourceHost(url: string) {
+    try { return new URL(url).hostname.replace(/^www\./, '') } catch { return url }
+}
 
 export default function TodoCard() {
     const [todos, , loading] = useStorageValue('todos', [])
@@ -27,6 +33,8 @@ export default function TodoCard() {
     const [draft, setDraft] = useState('')
     const [dueDate, setDueDate] = useState('')
     const [repeat, setRepeat] = useState<NonNullable<Todo['repeat']>>('none')
+    const [highlighted, setHighlighted] = useState<string | null>(null)
+    const rowRefs = useRef(new Map<string, HTMLLIElement>())
     const remove = useUndoDelete()
     const toast = useToast()
     const today = localDate()
@@ -35,8 +43,33 @@ export default function TodoCard() {
     const pageCount = Math.max(1, Math.ceil(sorted.length / 5))
     const currentPage = Math.min(page, pageCount - 1)
     const doneCount = todos.filter((todo) => todo.done).length
+    // A task picked from the command bar may be filtered out or on another page of the list, so
+    // reveal it: clear the filter, jump to its page, scroll to it and flash it briefly.
+    useEffect(() => {
+        const listener = (event: Event) => {
+            const id = (event as CustomEvent<string | undefined>).detail
+            if (!id) return
+            const match = todos.find((todo) => todo.id === id)
+            if (!match) return
+            setFilter('all')
+            const position = [...todos]
+                .sort((a, b) => Number(b.pinned) - Number(a.pinned) || (a.dueDate || '9999').localeCompare(b.dueDate || '9999') || a.createdAt - b.createdAt)
+                .findIndex((todo) => todo.id === id)
+            setPage(Math.max(0, Math.floor(position / 5)))
+            setHighlighted(id)
+        }
+        window.addEventListener('dashboard:reveal-todo', listener)
+        return () => window.removeEventListener('dashboard:reveal-todo', listener)
+    }, [todos])
+
+    useEffect(() => {
+        if (!highlighted) return
+        rowRefs.current.get(highlighted)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+        const timer = setTimeout(() => setHighlighted(null), 2000)
+        return () => clearTimeout(timer)
+    }, [highlighted])
     const add = async (taskText: string, date?: string, recurrence: Todo['repeat'] = 'none') => {
-        const todo: Todo = { id: crypto.randomUUID(), text: taskText.trim(), done: false, pinned: false, createdAt: Date.now(), dueDate: date || (recurrence !== 'none' ? today : undefined), repeat: recurrence }
+        const todo = createTodo(taskText.trim(), { dueDate: date || (recurrence !== 'none' ? today : undefined), repeat: recurrence })
         await changeStored('todos', [], (items) => [...items, todo])
         setText(''); setFilter('all'); setPage(0)
     }
@@ -64,7 +97,7 @@ export default function TodoCard() {
         event.stopPropagation()
         if (!draft.trim()) return
         try {
-            if (editingId) await changeStored('todos', [], (items) => items.map((todo) => todo.id === editingId ? { ...todo, text: draft.trim(), dueDate: dueDate || (repeat !== 'none' ? today : undefined), repeat } : todo))
+            if (editingId) await changeStored('todos', [], (items) => items.map((todo) => todo.id === editingId ? touch({ ...todo, text: draft.trim(), dueDate: dueDate || (repeat !== 'none' ? today : undefined), repeat }) : todo))
             else await add(draft, dueDate, repeat)
             setOpen(false)
         } catch { toast('Could not save this task. Please try again.') }
@@ -92,12 +125,12 @@ export default function TodoCard() {
             </form>
             <div className="productivity-tabs task-filters" aria-label="Filter tasks">{(['all', 'today', 'done'] as const).map((value) => <button key={value} aria-pressed={filter === value} onClick={() => { setFilter(value); setPage(0) }}>{value === 'all' ? 'All' : value === 'today' ? 'Today' : 'Completed'}</button>)}</div>
             {!sorted.length ? <CardEmpty><span className="empty-illustration"><ChecksIcon size={28} /></span><strong>{filter === 'today' ? 'Nothing due today.' : filter === 'done' ? 'Your finished tasks will appear here.' : 'A little focus goes a long way.'}</strong>{filter === 'all' && <p>Add a task to get started.</p>}</CardEmpty> : <ul className="todo-list">
-                {sorted.slice(currentPage * 5, currentPage * 5 + 5).map((todo) => <li key={todo.id} className="todo-row group flex items-center gap-2">
+                {sorted.slice(currentPage * 5, currentPage * 5 + 5).map((todo) => <li key={todo.id} ref={(node) => { if (node) rowRefs.current.set(todo.id, node); else rowRefs.current.delete(todo.id) }} className="todo-row group flex items-center gap-2" data-highlighted={todo.id === highlighted || undefined}>
                     <input type="checkbox" aria-label={`Complete ${todo.text}`} checked={todo.done} onChange={() => void toggleDone(todo.id)} className="shrink-0" />
-                    <span className="task-text"><span className={todo.done ? 'line-through opacity-60' : ''}>{todo.text}</span>{todo.dueDate && <small className={!todo.done && todo.dueDate < today ? 'task-overdue' : ''}>{todo.dueDate === today ? 'Today' : todo.dueDate}{todo.repeat && todo.repeat !== 'none' ? ` · ${todo.repeat}` : ''}</small>}</span>
+                    <span className="task-text"><span className={todo.done ? 'line-through opacity-60' : ''}>{todo.text}</span>{todo.dueDate && <small className={!todo.done && todo.dueDate < today ? 'task-overdue' : ''}>{todo.dueDate === today ? 'Today' : todo.dueDate}{todo.repeat && todo.repeat !== 'none' ? ` · ${todo.repeat}` : ''}</small>}{todo.source && <a className="task-source" href={todo.source.url} title={todo.source.title || todo.source.url}><LinkSimpleIcon size={11} />{sourceHost(todo.source.url)}</a>}</span>
                     {settings.focusEnabled && !todo.done && <button className="task-action icon-control" aria-label={`Focus on ${todo.text}`} onClick={() => void focus(todo)}><TimerIcon size={14} /></button>}
                     <button className="task-action icon-control" aria-label={`Edit ${todo.text}`} onClick={() => edit(todo)}><PencilSimpleIcon size={14} /></button>
-                    <button className="icon-control" aria-label={todo.pinned ? `Unpin ${todo.text}` : `Pin ${todo.text}`} aria-pressed={todo.pinned} onClick={() => void changeStored('todos', [], (items) => items.map((item) => item.id === todo.id ? { ...item, pinned: !item.pinned } : item))}><PushPinIcon size={14} weight={todo.pinned ? 'fill' : 'regular'} /></button>
+                    <button className="icon-control" aria-label={todo.pinned ? `Unpin ${todo.text}` : `Pin ${todo.text}`} aria-pressed={todo.pinned} onClick={() => void changeStored('todos', [], (items) => items.map((item) => item.id === todo.id ? touch({ ...item, pinned: !item.pinned }) : item))}><PushPinIcon size={14} weight={todo.pinned ? 'fill' : 'regular'} /></button>
                     <button className="task-action icon-control" aria-label={`Delete ${todo.text}`} onClick={() => void remove('todos', todo.id, 'Task')}><TrashIcon size={14} /></button>
                 </li>)}
             </ul>}

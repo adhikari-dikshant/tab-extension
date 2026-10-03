@@ -6,6 +6,7 @@ import { Modal } from '../Modal'
 import { BentoCard } from '../BentoGrid'
 import { CardEmpty, CardSkeleton } from '../CardState'
 import { ShortcutIcon } from '../ShortcutIcon'
+import { createShortcut } from '../../lib/storage'
 import { sanitizeSvgMarkup } from '../../lib/sanitizeSvg'
 import { useStorageValue } from '../../lib/useStorageValue'
 
@@ -81,7 +82,7 @@ export default function ShortcutsCard() {
     const save = () => {
         if (!label.trim() || !url.trim() || shortcuts.length >= MAX_SHORTCUTS) return
         const normalizedUrl = /^https?:\/\//i.test(url) ? url : `https://${url}`
-        setShortcuts([...shortcuts, { id: crypto.randomUUID(), label, url: normalizedUrl, icon: customIcon }])
+        setShortcuts([...shortcuts, createShortcut(label, normalizedUrl, { icon: customIcon })])
         setPage(Math.floor(shortcuts.length / 9))
         setAdding(false)
     }

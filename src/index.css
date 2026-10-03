@@ -10,6 +10,10 @@
     color-scheme: light;
     --accent: #3b82f6;
     --ui-opacity: 1;
+    --ease-out: cubic-bezier(.22, 1, .36, 1);
+    --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+    --dur-fast: 140ms;
+    --dur: 240ms;
 }
 
 body {
@@ -18,8 +22,9 @@ body {
 }
 
 /* Card/command-bar surface: solid tonal fill by default (crisp on the plain page background),
-   switching to frosted glass only once a wallpaper is actually active — see [data-wallpaper]
-   below. --ui-opacity (30-100%, wallpaper mode only) scales how see-through the glass is. */
+switching to frosted glass only once a wallpaper is actually active — see [data-wallpaper]
+   below. --ui-opacity (30-100%,
+wallpaper mode only) scales how see-through the glass is. */
 .glass-surface,
 .bento-card {
     background-color: var(--surface);
@@ -102,7 +107,8 @@ body {
 }
 
 /* Analog clock hands: the animation runs the full rotation over exactly one clock cycle
-   (60s/3600s/43200s), and a negative animation-delay set once on mount fast-forwards it to
+   (60s/3600s/43200s),
+and a negative animation-delay set once on mount fast-forwards it to
    the current position — no per-second JS re-render needed to keep the hands moving. */
 @keyframes clock-hand-rotate {
     to {
@@ -218,9 +224,19 @@ textarea:focus-visible {
     outline: 2px solid var(--accent);
 }
 
+/* `scale` and `translate` are separate from `transform`, so press and lift feedback compose with
+   any transform a component already uses for positioning. */
 button,
 a {
-    transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+    transition:
+        background-color var(--dur-fast) ease,
+        border-color var(--dur-fast) ease,
+        color var(--dur-fast) ease,
+        opacity var(--dur-fast) ease,
+        box-shadow var(--dur) var(--ease-out),
+        transform var(--dur) var(--ease-out),
+        translate var(--dur) var(--ease-out),
+        scale var(--dur) var(--ease-spring);
 }
 
 .dashboard-shell {
@@ -293,15 +309,15 @@ a {
 }
 
 .welcome-panel {
-    min-height: 188px;
-    height: clamp(188px, 25vh, 240px);
+    min-height: 204px;
+    height: clamp(204px, 27vh, 264px);
     flex-shrink: 0;
     position: relative;
     overflow: hidden;
     border: 1px solid var(--hero-border);
     border-radius: 23px;
     background: linear-gradient(110deg, var(--hero-start) 0%, var(--hero-start) 43%, var(--hero-end) 100%);
-    padding: 44px 56px;
+    padding: 32px 32px 32px 56px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -356,31 +372,75 @@ a {
     align-items: flex-end;
 }
 
+.welcome-now {
+    display: flex;
+    align-items: stretch;
+    gap: 26px;
+    padding: 20px 22px 20px 28px;
+    border: 1px solid color-mix(in srgb, var(--hero-border) 72%, transparent);
+    border-radius: 26px;
+    background: linear-gradient(155deg,
+            color-mix(in srgb, var(--surface) 78%, transparent) 0%,
+            color-mix(in srgb, var(--time-surface) 60%, transparent) 100%);
+    box-shadow:
+        inset 0 1px rgb(255 255 255 / .55),
+        0 1px 2px rgb(40 45 35 / .04),
+        0 16px 34px -20px rgb(40 45 35 / .28);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: var(--ink);
+    text-align: left;
+}
+
+[data-theme='dark'] .welcome-now {
+    box-shadow:
+        inset 0 1px rgb(255 255 255 / .06),
+        0 16px 34px -20px rgb(0 0 0 / .65);
+}
+
+.now-time {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+}
+
+.now-side {
+    min-width: 184px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 14px;
+    padding-left: 26px;
+    border-left: 1px solid color-mix(in srgb, var(--hero-border) 70%, transparent);
+}
+
+.now-side> :only-child {
+    margin-block: auto;
+}
+
 .digital-clock {
     display: flex;
     align-items: baseline;
-    gap: 8px;
+    gap: 9px;
 }
 
 .digital-clock time {
     font-family: var(--font-sans);
-    font-size: clamp(40px, 4.2vw, 61px);
-    font-weight: 400;
-    letter-spacing: -.03em;
-    line-height: 1;
+    font-size: clamp(54px, min(5.6vw, 8.4vh), 86px);
+    font-weight: 350;
+    letter-spacing: -.045em;
+    line-height: .92;
     font-variant-numeric: tabular-nums;
 }
 
 .digital-clock>span {
-    font-size: 11px;
+    font-size: 12px;
+    font-weight: 650;
+    letter-spacing: .14em;
+    text-transform: uppercase;
     color: var(--hero-muted);
-}
-
-.clock-date {
-    font-size: 11px;
-    letter-spacing: .02em;
-    color: var(--hero-muted);
-    margin-top: 12px;
 }
 
 [data-theme='dark'] .welcome-panel {
@@ -390,7 +450,6 @@ a {
 
 [data-theme='dark'] .welcome-subtitle,
 [data-theme='dark'] .eyebrow,
-[data-theme='dark'] .clock-date,
 [data-theme='dark'] .digital-clock>span {
     color: var(--hero-muted);
 }
@@ -484,13 +543,6 @@ a {
     grid-row: span 2;
 }
 
-.weather-card {
-    grid-column: 3;
-    grid-row: 1;
-    background: var(--weather-surface);
-    border-color: var(--hero-border);
-}
-
 .visited-card {
     grid-column: 1;
     grid-row: 2;
@@ -510,11 +562,6 @@ a {
 
 .screentime-trigger:hover .bento-card {
     border-color: var(--green);
-}
-
-[data-theme='dark'] .weather-card {
-    background: var(--weather-surface);
-    border-color: var(--line);
 }
 
 .shortcut-grid {
@@ -760,13 +807,6 @@ a {
     height: auto;
 }
 
-.weather-temperature {
-    font-family: var(--font-sans);
-    font-size: 47px;
-    letter-spacing: -.03em;
-    line-height: 1.2;
-}
-
 .weather-content .flex.flex-wrap {
     gap: 4px;
 }
@@ -774,39 +814,6 @@ a {
 .weather-content .flex.flex-wrap>* {
     font-size: 9px;
     padding: 3px 7px;
-}
-
-.visited-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.visited-link {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    width: 100%;
-    padding: 10px;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    background: var(--soft);
-}
-
-.visited-link>img,
-.visited-link>span:first-child {
-    flex-shrink: 0;
-}
-
-.visited-link>span:last-child {
-    font-size: 10px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.visited-link:hover {
-    background: var(--surface);
 }
 
 .screen-total {
@@ -964,20 +971,8 @@ a {
         min-height: 37px;
     }
 
-    .weather-temperature {
-        font-size: 37px;
-    }
-
     .screen-total {
         font-size: 33px;
-    }
-
-    .visited-list {
-        gap: 5px;
-    }
-
-    .visited-link {
-        padding: 6px;
     }
 }
 
@@ -995,7 +990,16 @@ a {
     }
 
     .welcome-panel {
-        padding-inline: 40px;
+        padding-inline: 40px 24px;
+    }
+
+    .welcome-now {
+        gap: 18px;
+    }
+
+    .now-side {
+        min-width: 156px;
+        padding-left: 18px;
     }
 
     .bento-grid {
@@ -1026,11 +1030,10 @@ a {
     }
 
     .shortcuts-card,
-    .todo-card,
-    .weather-card,
-    .visited-card,
-    .screentime-card,
-    .screentime-trigger {
+.todo-card,
+.visited-card,
+.screentime-card,
+.screentime-trigger {
         grid-column: auto;
         grid-row: auto;
     }
@@ -1050,7 +1053,7 @@ a {
     }
 
     .digital-clock time {
-        font-size: 40px;
+        font-size: 52px;
     }
 }
 
@@ -1096,18 +1099,37 @@ a {
     }
 
     .welcome-clock {
-        align-items: flex-start;
-        flex-direction: row;
-        gap: 12px;
+        width: 100%;
+        align-items: stretch;
+    }
+
+    .welcome-now {
+        padding: 16px 18px;
+        gap: 16px;
+    }
+
+    .now-side {
+        min-width: 0;
+        flex: 1;
+        padding-left: 16px;
+    }
+
+    .day-progress {
+        min-width: 110px;
+    }
+
+    .now-weather-icon {
+        width: 44px;
+        height: 44px;
+    }
+
+    .now-weather-temp {
+        font-size: 28px;
     }
 
     .digital-clock time {
-        font-size: 33px;
-        letter-spacing: -.03em;
-    }
-
-    .clock-date {
-        font-size: 9px;
+        font-size: 44px;
+        letter-spacing: -.04em;
     }
 
     .bento-grid {
@@ -1139,7 +1161,7 @@ a {
     }
 
     .task-action,
-    .shortcut-remove {
+.shortcut-remove {
         opacity: 1;
     }
 }
@@ -1154,7 +1176,7 @@ a {
     }
 
     .dropdown-animate,
-    .accordion-content {
+.accordion-content {
         animation: none !important;
     }
 }
@@ -1171,7 +1193,10 @@ a {
     display: none;
 }
 
-.bento-grid:is([data-count='1'], [data-count='2'], [data-count='3'], [data-count='4'])>* {
+.bento-grid:is([data-count='1'],
+[data-count='2'],
+[data-count='3'],
+[data-count='4'])>* {
     grid-column: auto;
     grid-row: auto;
 }
@@ -1195,13 +1220,17 @@ a {
 }
 
 @media (max-width: 600px) {
-    .bento-grid:is([data-count='1'], [data-count='2'], [data-count='3'], [data-count='4']) {
+    .bento-grid:is([data-count='1'],
+[data-count='2'],
+[data-count='3'],
+[data-count='4']) {
         grid-template-columns: minmax(0, 1fr);
         grid-template-rows: none;
     }
 }
 
-/* Reserve enough room for two shortcut rows, including their labels and pagination. */
+/* Reserve enough room for two shortcut rows,
+including their labels and pagination. */
 .shortcut-grid {
     grid-template-columns: repeat(5, minmax(0, 1fr));
 }
@@ -1245,9 +1274,17 @@ a {
     }
 
     .welcome-panel {
-        min-height: 168px;
-        height: 168px;
-        padding-block: 34px;
+        min-height: 188px;
+        height: 188px;
+        padding-block: 22px;
+    }
+
+    .welcome-now {
+        padding-block: 14px;
+    }
+
+    .digital-clock time {
+        font-size: 60px;
     }
 
     .bento-card {
@@ -1283,9 +1320,9 @@ a {
     }
 
     .welcome-panel {
-        height: 132px;
-        min-height: 132px;
-        padding: 28px 40px;
+        height: 152px;
+        min-height: 152px;
+        padding: 28px 24px 28px 40px;
     }
 
     .eyebrow {
@@ -1302,8 +1339,33 @@ a {
         font-size: 10px;
     }
 
+    .welcome-panel {
+        padding-block: 14px;
+    }
+
+    .welcome-now {
+        padding-block: 10px;
+    }
+
+    .now-time {
+        gap: 7px;
+    }
+
+    .now-side {
+        gap: 10px;
+    }
+
+    .now-weather-icon {
+        width: 42px;
+        height: 42px;
+    }
+
+    .now-weather-temp {
+        font-size: 28px;
+    }
+
     .digital-clock time {
-        font-size: 42px;
+        font-size: 48px;
     }
 
     .bento-card {
@@ -1335,7 +1397,6 @@ a {
         padding-top: 0;
     }
 
-    .weather-temperature,
     .screen-total {
         font-size: 28px;
     }
@@ -1510,12 +1571,6 @@ a {
     margin-bottom: 12px;
 }
 
-.weather-sun {
-    color: var(--green);
-    font-size: 37px;
-    line-height: 1;
-}
-
 @media (max-height: 760px) and (min-width: 901px) {
     .empty-illustration {
         width: 29px;
@@ -1526,16 +1581,11 @@ a {
     .empty-illustration svg {
         width: 20px;
     }
-
-    .weather-sun {
-        font-size: 27px;
-    }
 }
 
 @media (min-width: 901px) and (max-height: 650px) {
 
-    .card-empty>.empty-illustration,
-    .weather-sun {
+    .card-empty>.empty-illustration {
         display: none;
     }
 
@@ -1565,7 +1615,6 @@ h3 {
     line-height: 1.2;
 }
 
-.weather-temperature,
 .screen-total {
     font-weight: 400;
     font-synthesis: none;
@@ -1576,7 +1625,8 @@ h3 {
     line-height: 1.2;
 }
 
-/* Consistent, understated navigation with Phosphor's regular-weight icons. */
+/* Consistent,
+understated navigation with Phosphor's regular-weight icons. */
 :root {
     --rail-width: 88px;
 }
@@ -1877,7 +1927,7 @@ h3 {
     }
 
     .brand-mark,
-    .rail-item>button {
+.rail-item>button {
         width: 36px;
         height: 36px;
         border-radius: 10px;
@@ -1937,7 +1987,7 @@ h3 {
 @media (prefers-reduced-motion: reduce) {
 
     .offcanvas-panel,
-    .offcanvas-backdrop {
+.offcanvas-backdrop {
         animation: none !important;
     }
 
@@ -2125,20 +2175,41 @@ h3 {
 .focus-chip {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: 7px;
-    margin-top: 13px;
-    padding: 6px 10px;
-    border: 1px solid var(--hero-border);
-    border-radius: 9px;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 13px;
+    border: 1px solid color-mix(in srgb, var(--hero-border) 85%, transparent);
+    border-radius: 13px;
     color: var(--green);
-    background: color-mix(in srgb, var(--surface) 45%, transparent);
-    font-size: 10px;
+    background: color-mix(in srgb, var(--surface) 55%, transparent);
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
     font-variant-numeric: tabular-nums;
 }
 
 .focus-chip:hover {
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--hero-border));
     background: var(--surface);
+    transform: translateY(-1px);
+}
+
+.focus-chip[data-state='running'],
+.focus-chip[data-state='paused'] {
+    border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+    background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+
+.focus-chip[data-state='running']>svg {
+    animation: focus-breathe 2.4s ease-in-out infinite;
+}
+
+@keyframes focus-breathe {
+    50% { opacity: .4; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .focus-chip[data-state='running']>svg { animation: none; }
 }
 
 .focus-session {
@@ -2402,10 +2473,6 @@ h3 {
 }
 
 @media (min-width: 901px) and (min-height: 581px) {
-    .dashboard-grid[data-count='5']>.dashboard-card-slot {
-        grid-column: var(--slot-column);
-        grid-row: var(--slot-row);
-    }
 }
 
 @media (max-width: 900px),
@@ -2435,8 +2502,7 @@ h3 {
     }
 
     .focus-chip {
-        margin-top: 7px;
-        padding-block: 3px;
+        padding-block: 4px;
     }
 
     .task-filters button {
@@ -2465,7 +2531,6 @@ body:has([role='dialog']) .toast-stack-global {
     justify-content: space-between;
 }
 
-
 /* Independent scrolling lists keep all entries accessible without paging the dashboard. */
 .visited-card .card-body,
 .notes-card .card-body {
@@ -2473,23 +2538,6 @@ body:has([role='dialog']) .toast-stack-global {
     overflow-x: hidden;
     overscroll-behavior: contain;
     scrollbar-gutter: stable;
-}
-
-.visited-list .visited-link {
-    padding-right: 36px;
-}
-
-.visited-save {
-    position: absolute;
-    right: 6px;
-    top: 50%;
-    transform: translateY(-50%);
-    opacity: 0;
-}
-
-.visited-item:hover .visited-save,
-.visited-item:focus-within .visited-save {
-    opacity: 1;
 }
 
 .notes-list {
@@ -2549,41 +2597,10 @@ body:has([role='dialog']) .toast-stack-global {
 
 @media (min-width: 901px) and (min-height: 581px) {
 
-    /* Stagger the card seams: a compact launchpad gives the sites list more room. */
-    .dashboard-grid[data-count='6'] {
-        grid-template-rows: minmax(112px, .5fr) minmax(0, .35fr) minmax(0, .35fr) minmax(118px, .8fr);
-    }
-
-    .dashboard-grid[data-count='6']> :nth-child(1) {
-        grid-column: 1;
-        grid-row: 1;
-    }
-
-    .dashboard-grid[data-count='6']> :nth-child(2) {
-        grid-column: 2;
-        grid-row: 1 / 4;
-    }
-
-    .dashboard-grid[data-count='6']> :nth-child(3) {
-        grid-column: 3;
-        grid-row: 1 / 3;
-    }
-
-    .dashboard-grid[data-count='6']> :nth-child(4) {
-        grid-column: 1;
-        grid-row: 2 / 5;
-    }
-
-    .dashboard-grid[data-count='6']> :nth-child(5) {
-        grid-column: 2;
-        grid-row: 4;
-    }
-
-    .dashboard-grid[data-count='6']> :nth-child(6) {
-        grid-column: 3;
-        grid-row: 3 / 5;
-    }
-
+    /* Card placement is computed in src/lib/layout.ts and applied as an inline grid-area,
+so the
+       tall pair follows the chosen cards rather than whichever index landed in a hard-coded slot.
+       What stays here is the breathing room that a denser grid needs. */
     .dashboard-grid[data-count='6'] .shortcuts-card {
         padding-block: 15px;
     }
@@ -2599,33 +2616,778 @@ body:has([role='dialog']) .toast-stack-global {
     .dashboard-grid[data-count='6'] .card-body {
         overscroll-behavior: contain;
     }
-
-    .dashboard-grid[data-count='6'][data-editing='true'] {
-        grid-template-rows: minmax(132px, .5fr) minmax(0, .35fr) minmax(0, .35fr) minmax(118px, .8fr);
-    }
-
-    .dashboard-grid[data-count='6'][data-featured-column='1'] {
-        grid-template-columns: 1.25fr 1fr 1fr;
-    }
-
-    .dashboard-grid[data-count='6'][data-featured-column='2'] {
-        grid-template-columns: 1fr 1.25fr 1fr;
-    }
-
-    .dashboard-grid[data-count='6'][data-featured-column='3'] {
-        grid-template-columns: 1fr 1fr 1.25fr;
-    }
-}
-
-@media (pointer: coarse) {
-    .visited-save {
-        opacity: 1;
-    }
 }
 
 @media (max-height: 650px) {
     .note-card-preview {
         padding: 8px;
         gap: 4px;
+    }
+}
+/* Provenance on a captured record: present enough to click,
+quiet enough not to compete with the
+   task or note itself. */
+.task-source,
+.note-source {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 100%;
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.task-source:hover,
+.note-source:hover {
+    color: var(--accent);
+    text-decoration: underline;
+}
+
+.note-source {
+    margin-bottom: 10px;
+    font-size: 12px;
+}
+
+/* A task reached from the command bar flashes so it is findable in a list the user did not scroll
+   to themselves. Suppressed under reduced-motion,
+where the ring alone carries the signal. */
+.todo-row[data-highlighted] {
+    border-radius: 8px;
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    animation: todo-reveal 2s ease-out;
+}
+
+@keyframes todo-reveal {
+    0%,
+40% { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+    100% { background: transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .todo-row[data-highlighted] {
+        animation: none;
+    }
+}
+
+/* ── "Now" tile: date, day progress and weather beside the clock ─────────────────────────────
+   The time column answers "what time is it", the side column "what is it like out". The weather
+   icon tile takes its tint from the sky condition so the reading registers before it is read. */
+.today {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.today-date {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--hero-muted);
+    white-space: nowrap;
+}
+
+.today-date>span {
+    color: var(--ink);
+    font-weight: 650;
+}
+
+.day-progress {
+    position: relative;
+    width: 100%;
+    min-width: 170px;
+    height: 4px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--hero-border) 85%, transparent);
+}
+
+.day-progress>span {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: calc(var(--day) * 100%);
+    border-radius: inherit;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 25%, transparent), var(--accent));
+}
+
+.day-progress>span::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: -4.5px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+    transform: translateY(-50%);
+}
+
+.now-weather {
+    --sky-fg: var(--accent);
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 13px;
+    row-gap: 4px;
+    align-items: center;
+    margin: -6px;
+    padding: 6px;
+    border: 0;
+    border-radius: 16px;
+    background: transparent;
+    color: var(--ink);
+    text-align: left;
+}
+
+button.now-weather:hover {
+    background: color-mix(in srgb, var(--surface) 65%, transparent);
+}
+
+.now-weather[data-sky='clear'] { --sky-fg: #d98a1c; }
+.now-weather[data-sky='cloud'] { --sky-fg: #6b8093; }
+.now-weather[data-sky='rain'] { --sky-fg: #3b7fc4; }
+.now-weather[data-sky='snow'] { --sky-fg: #4fa3c7; }
+.now-weather[data-sky='storm'] { --sky-fg: #7a62c8; }
+
+.now-weather-icon {
+    grid-row: span 2;
+    width: 52px;
+    height: 52px;
+    display: grid;
+    place-items: center;
+    border-radius: 16px;
+    color: var(--sky-fg);
+    background: color-mix(in srgb, var(--sky-fg) 15%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sky-fg) 18%, transparent);
+}
+
+[data-theme='dark'] .now-weather-icon {
+    color: color-mix(in srgb, var(--sky-fg) 65%, white);
+    background: color-mix(in srgb, var(--sky-fg) 22%, transparent);
+}
+
+.now-weather-temp {
+    align-self: end;
+    font-size: 34px;
+    font-weight: 600;
+    letter-spacing: -.035em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.now-weather-temp>span {
+    margin-left: 2px;
+    vertical-align: top;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0;
+    color: var(--hero-muted);
+}
+
+.now-weather-text {
+    align-self: start;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    color: var(--hero-muted);
+}
+
+.now-weather.is-loading .now-weather-icon,
+.now-weather.is-loading .now-weather-temp,
+.now-weather.is-loading .now-weather-text {
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--hero-border) 70%, transparent);
+    box-shadow: none;
+    animation: now-shimmer 1.4s ease-in-out infinite;
+}
+
+.now-weather.is-loading .now-weather-icon { border-radius: 16px; }
+.now-weather.is-loading .now-weather-temp { width: 64px; height: 28px; }
+.now-weather.is-loading .now-weather-text { width: 84px; height: 11px; }
+
+@keyframes now-shimmer {
+    50% { opacity: .45; }
+}
+
+.now-weather-prompt {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 13px;
+    border: 1px dashed var(--hero-border);
+    border-radius: 13px;
+    background: transparent;
+    color: var(--hero-muted);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.now-weather-prompt:hover {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--hero-border));
+    color: var(--green);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .now-weather.is-loading * { animation: none; }
+}
+
+/* ── Screen time: the whole breakdown on the card ─────────────────────────────────────────────
+   Every number this card exists for is now visible without opening anything,
+so it needs to stay
+   compact: a short headline,
+the bar,
+then a scrolling list that fits the shorter grid row. */
+.screen-content {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    min-height: 0;
+}
+
+.screen-headline {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.screen-delta {
+    font-size: 11px;
+}
+
+.screen-delta.is-down {
+    color: #22c55e;
+}
+
+.screen-delta.is-up {
+    color: var(--muted);
+}
+
+.screen-range {
+    display: flex;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+}
+
+.screen-range button {
+    padding: 2px 9px;
+    border-radius: 999px;
+    color: var(--muted);
+    font-size: 10.5px;
+    letter-spacing: .02em;
+}
+
+.screen-range button[aria-pressed='true'] {
+    background: var(--accent);
+    color: #fff;
+}
+
+.screen-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    overflow-y: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.screen-breakdown li {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+}
+
+.screen-breakdown i {
+    flex-shrink: 0;
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+}
+
+.screen-domain {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.screen-duration {
+    color: var(--muted);
+}
+
+/* ── Layout editing: the height toggle ───────────────────────────────────────────────────────── */
+.layout-hint {
+    color: var(--muted);
+    font-size: 11.5px;
+}
+
+.layout-feature-toggle {
+    width: 22px;
+    height: 22px;
+    border-radius: 7px;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1;
+}
+
+.layout-feature-toggle[aria-pressed='true'] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+}
+
+/* A featured card has twice the height,
+so its body gets the extra room rather than the padding. */
+.dashboard-card-slot[data-featured] .card-body {
+    flex: 1;
+    min-height: 0;
+}
+
+/* ── Most visited: shaped by the card's own width ─────────────────────────────────────────────
+   The same card can be a full-width strip barely 70px tall, a half-width tile, or a tall narrow
+   column, and which one it is depends on the bento layout rather than the viewport — so it queries
+   its own width. Narrow: a list. Medium: two columns of the list. Wide: one row of icon tiles. */
+.visited-card .card-body {
+    container: visited / inline-size;
+}
+
+.visited-list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.visited-item {
+    position: relative;
+    min-width: 0;
+}
+
+.visited-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 6px 36px 6px 6px;
+    border-radius: 12px;
+    color: var(--ink);
+}
+
+.visited-link:hover,
+.visited-item:focus-within .visited-link {
+    background: var(--soft);
+}
+
+.visited-icon {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    transition:
+        scale var(--dur) var(--ease-spring),
+        translate var(--dur) var(--ease-spring),
+        border-color var(--dur-fast) ease,
+        box-shadow var(--dur) var(--ease-out);
+}
+
+.visited-favicon {
+    width: 18px;
+    height: 18px;
+}
+
+.visited-link:hover .visited-icon {
+    scale: 1.08;
+    border-color: color-mix(in srgb, var(--accent) 30%, var(--line));
+    box-shadow: 0 6px 14px -8px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.visited-link:active .visited-icon {
+    scale: .92;
+    transition-duration: var(--dur-fast);
+}
+
+.visited-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.visited-title,
+.visited-host {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.3;
+}
+
+.visited-title {
+    font-size: 12px;
+    font-weight: 550;
+}
+
+.visited-host {
+    font-size: 10.5px;
+    color: var(--muted);
+}
+
+.visited-save {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    margin-top: -11px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--muted);
+    opacity: 0;
+    scale: .5;
+}
+
+.visited-item:hover .visited-save,
+.visited-item:focus-within .visited-save {
+    opacity: 1;
+    scale: 1;
+}
+
+.visited-save:hover {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #fff;
+}
+
+.visited-save[aria-pressed='true'] {
+    border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+    background: var(--surface);
+    color: var(--accent);
+    cursor: default;
+}
+
+/* Plays when the + is swapped for a check, i.e. the moment the site is saved. */
+.visited-save[aria-pressed='true'] svg {
+    animation: visited-saved 420ms var(--ease-spring);
+}
+
+@keyframes visited-saved {
+    from {
+        scale: .2;
+        rotate: -60deg;
+    }
+}
+
+@media (pointer: coarse) {
+    .visited-save {
+        opacity: 1;
+        scale: 1;
+    }
+}
+
+@container visited (min-width: 340px) {
+    .visited-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 6px;
+    }
+}
+
+/* A wide card is a short strip, so trade the domain line for a single row of tiles. */
+@container visited (min-width: 480px) {
+    .visited-list {
+        grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+        gap: 4px;
+    }
+
+    .visited-link {
+        flex-direction: column;
+        gap: 6px;
+        padding: 6px 4px 5px;
+        text-align: center;
+    }
+
+    .visited-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 12px;
+    }
+
+    .visited-favicon {
+        width: 20px;
+        height: 20px;
+    }
+
+    .visited-text {
+        width: 100%;
+        align-items: center;
+    }
+
+    .visited-title {
+        max-width: 100%;
+        font-size: 11px;
+        font-weight: 500;
+    }
+
+    .visited-host {
+        display: none;
+    }
+
+    .visited-link:hover .visited-icon {
+        scale: 1.04;
+        translate: 0 -2px;
+    }
+
+    /* Sits on the icon's top-right corner, like the remove badge on shortcuts. */
+    .visited-save {
+        top: 0;
+        right: calc(50% - 30px);
+        width: 20px;
+        height: 20px;
+        margin-top: 0;
+    }
+}
+
+/* ── Micro-interactions ───────────────────────────────────────────────────────────────────────
+   One vocabulary everywhere: a small lift on hover, a quick give under the pointer on press, and a
+   slight overshoot on release. Distances stay small and nothing takes long enough to wait for —
+   this page opens dozens of times a day. */
+
+/* Press. Compact controls give more than wide ones, which would visibly shrink at the same ratio. */
+:is(.rail-item>button, .brand-mark, .icon-control, .add-task-button, .pagination button,
+    .modal-close, .layout-card-controls button, .layout-feature-toggle, .task-filters button,
+    .screen-range button, .card-empty>button):active:not(:disabled) {
+    scale: .9;
+    transition-duration: var(--dur-fast);
+}
+
+:is(.productivity-button, .focus-chip, .now-weather-prompt, button.now-weather,
+    .layout-toolbar>button):active:not(:disabled) {
+    scale: .97;
+    transition-duration: var(--dur-fast);
+}
+
+.shortcut-tile:active {
+    scale: .9;
+    transition-duration: var(--dur-fast);
+}
+
+.shortcut-tile:hover {
+    box-shadow: 0 8px 18px -10px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.shortcut-add>svg {
+    transition: border-color var(--dur-fast) ease, rotate var(--dur) var(--ease-spring), scale var(--dur) var(--ease-spring);
+}
+
+.shortcut-add:hover>svg {
+    border-color: var(--green);
+    rotate: 90deg;
+}
+
+.shortcut-add:active>svg {
+    scale: .9;
+}
+
+/* Focus rings draw in from slightly outside rather than snapping on. */
+:is(button, a, input, textarea):focus-visible {
+    animation: focus-ring-in 220ms var(--ease-out);
+}
+
+@keyframes focus-ring-in {
+    from {
+        outline-color: transparent;
+        outline-offset: 8px;
+    }
+}
+
+/* Cards answer the pointer with their edge and shadow only: a moving card under the cursor is
+   exactly the kind of motion that pulls attention off the task. */
+.bento-card {
+    transition: border-color var(--dur) ease, box-shadow var(--dur) var(--ease-out);
+}
+
+.bento-card:hover {
+    border-color: color-mix(in srgb, var(--accent) 16%, var(--line));
+    box-shadow: 0 16px 36px -24px rgb(36 48 40 / .3);
+}
+
+[data-theme='dark'] .bento-card:hover {
+    box-shadow: 0 16px 36px -22px rgb(0 0 0 / .65);
+}
+
+.card-icon,
+.empty-illustration {
+    transition: rotate var(--dur) var(--ease-spring), scale var(--dur) var(--ease-spring), translate var(--dur) var(--ease-spring);
+}
+
+.bento-card:hover .card-icon {
+    rotate: -10deg;
+    scale: 1.12;
+}
+
+.bento-card:hover .empty-illustration {
+    translate: 0 -3px;
+}
+
+/* Rail: the icon rises a hair and the label follows the colour. */
+.rail-item>button>svg {
+    transition: translate var(--dur) var(--ease-spring);
+}
+
+.rail-item>button:hover>svg {
+    translate: 0 -1.5px;
+}
+
+.rail-item>span {
+    transition: color var(--dur-fast) ease;
+}
+
+.rail-item:has(>button:hover)>span {
+    color: var(--green);
+}
+
+.search-surface {
+    transition: border-color var(--dur) ease, box-shadow var(--dur) var(--ease-out);
+}
+
+/* Checking a task off is the most satisfying click on the page, so it gets the one bounce. */
+.todo-row input[type='checkbox'] {
+    transition: background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, box-shadow var(--dur) var(--ease-out);
+}
+
+.todo-row input[type='checkbox']:hover {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.todo-row input[type='checkbox']:checked {
+    animation: check-pop 360ms var(--ease-spring);
+}
+
+.todo-row input[type='checkbox']:checked::after {
+    animation: check-mark-in 260ms var(--ease-out) 60ms both;
+}
+
+@keyframes check-pop {
+    0% { scale: .65; }
+}
+
+@keyframes check-mark-in {
+    from {
+        opacity: 0;
+        scale: .3;
+    }
+}
+
+.task-text>span {
+    transition: opacity var(--dur) ease;
+}
+
+/* Row actions and remove badges grow in from their own centre instead of just appearing. */
+.task-action {
+    scale: .8;
+}
+
+.todo-row:hover .task-action,
+.todo-row:focus-within .task-action {
+    scale: 1;
+}
+
+.shortcut-remove {
+    scale: .6;
+    transition: opacity var(--dur-fast) ease, scale var(--dur) var(--ease-spring), background-color var(--dur-fast) ease;
+}
+
+.group:hover .shortcut-remove,
+.group:focus-within .shortcut-remove {
+    scale: 1;
+}
+
+.shortcut-remove:hover {
+    background: #c2353f;
+}
+
+/* Where these are always shown (small screens, touch), they stay full size. */
+@media (max-width: 600px), (pointer: coarse) {
+    .task-action,
+    .shortcut-remove {
+        scale: 1;
+    }
+}
+
+.note-card-preview {
+    transition: background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, box-shadow var(--dur) var(--ease-out);
+}
+
+.note-card-preview:hover {
+    box-shadow: 0 8px 18px -12px rgb(36 48 40 / .35);
+}
+
+.now-weather-icon {
+    transition: translate var(--dur) var(--ease-spring), rotate var(--dur) var(--ease-spring);
+}
+
+button.now-weather:hover .now-weather-icon {
+    translate: 0 -2px;
+    rotate: -5deg;
+}
+
+button[role='switch']>span {
+    transition-duration: var(--dur);
+    transition-timing-function: var(--ease-spring);
+}
+
+/* Arrival: the page settles in top to bottom, quick enough to be over before the eye gets there. */
+@keyframes rise-in {
+    from {
+        opacity: 0;
+        translate: 0 8px;
+    }
+}
+
+.welcome-panel,
+.search-section,
+.dashboard-card-slot {
+    animation: rise-in 440ms var(--ease-out) both;
+}
+
+.search-section { animation-delay: 40ms; }
+.dashboard-card-slot:nth-child(1) { animation-delay: 80ms; }
+.dashboard-card-slot:nth-child(2) { animation-delay: 115ms; }
+.dashboard-card-slot:nth-child(3) { animation-delay: 150ms; }
+.dashboard-card-slot:nth-child(4) { animation-delay: 185ms; }
+.dashboard-card-slot:nth-child(5) { animation-delay: 220ms; }
+.dashboard-card-slot:nth-child(6) { animation-delay: 255ms; }
+
+@media (prefers-reduced-motion: reduce) {
+    .welcome-panel,
+    .search-section,
+    .dashboard-card-slot,
+    .todo-row input[type='checkbox'],
+    .todo-row input[type='checkbox']::after,
+    .visited-save svg,
+    :is(button, a, input, textarea):focus-visible {
+        animation: none !important;
     }
 }

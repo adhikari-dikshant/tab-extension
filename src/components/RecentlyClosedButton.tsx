@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Offcanvas } from './Offcanvas'
-import WorkspacesPanel from './WorkspacesPanel'
 import { AppWindowIcon as AppWindow } from '@phosphor-icons/react/dist/csr/AppWindow'
 import { ClockCounterClockwiseIcon as History } from '@phosphor-icons/react/dist/csr/ClockCounterClockwise'
 import { faviconFor } from '../lib/storage'
@@ -17,7 +16,6 @@ function timeAgo(ms: number) {
 }
 
 export default function RecentlyClosedButton() {
-    const [view, setView] = useState<'recent' | 'saved'>('recent')
     const [open, setOpen] = useState(false)
     const [permission, setPermission] = useState<'checking' | 'granted' | 'denied'>('checking')
     const [sessions, setSessions] = useState<chrome.sessions.Session[]>([])
@@ -59,11 +57,7 @@ export default function RecentlyClosedButton() {
             }}
             trigger={<button type="button" aria-label="Recently closed"><History size={20} /></button>}
         >
-            <div className="productivity-tabs" aria-label="Recent or saved tabs">
-                <button aria-pressed={view === 'recent'} onClick={() => setView('recent')}>Recently closed</button>
-                <button aria-pressed={view === 'saved'} onClick={() => setView('saved')}>Saved workspaces</button>
-            </div>
-            {view === 'saved' ? <WorkspacesPanel /> : permission === 'checking' ? (
+            {permission === 'checking' ? (
                 <p className="offcanvas-empty">…</p>
             ) : permission === 'denied' ? (
                 <div className="offcanvas-empty">

@@ -40,7 +40,7 @@ export default function FocusButton() {
     })
     const today = focus.history.filter((entry) => localDate(new Date(entry.completedAt)) === localDate())
     return <Offcanvas title="Focus" description="One task at a time. Your timer stays in sync across new tabs." icon={TimerIcon} open={open} onOpenChange={setOpen}
-        trigger={<button className="focus-chip" aria-label="Focus timer"><TimerIcon size={15} /><span>{session && session.status !== 'finished' ? `${session.mode === 'break' ? 'Break ' : ''}${time}` : session?.status === 'finished' ? 'Session complete' : 'Start focus'}</span></button>}>
+        trigger={<button className="focus-chip" data-state={session?.status ?? 'idle'} aria-label="Focus timer"><TimerIcon size={18} /><span>{session && session.status !== 'finished' ? `${session.mode === 'break' ? 'Break ' : ''}${time}` : session?.status === 'finished' ? 'Session complete' : 'Start focus'}</span></button>}>
         {session && <div className="focus-session">
             <span className="productivity-muted">{session.mode === 'break' ? 'BREAK' : 'FOCUS SESSION'}</span>
             <strong>{session.label}</strong><time>{session.status === 'finished' ? 'Done' : time}</time>

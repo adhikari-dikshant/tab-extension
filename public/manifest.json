@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Daily Workspace — New Tab Dashboard",
+  "name": "Daily Workspace \u2014 New Tab Dashboard",
   "short_name": "Daily Workspace",
-  "version": "0.0.1",
+  "version": "0.2.0",
   "description": "Your daily essentials in a bento dashboard. Organize tasks, notes and shortcuts, check the weather, and stay focused.",
   "icons": {
     "16": "icons/icon16.png",
@@ -17,13 +17,56 @@
     "service_worker": "src/background/index.ts",
     "type": "module"
   },
-  "permissions": ["storage", "unlimitedStorage", "alarms", "favicon"],
-  "optional_permissions": ["notifications", "bookmarks", "tabs", "idle", "sessions", "topSites"],
+  "permissions": [
+    "storage",
+    "unlimitedStorage",
+    "alarms",
+    "favicon",
+    "activeTab",
+    "scripting"
+  ],
+  "optional_permissions": [
+    "notifications",
+    "bookmarks",
+    "tabs",
+    "idle",
+    "sessions",
+    "topSites"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "optional_host_permissions": [
     "https://duckduckgo.com/*",
     "https://www.google.com/*",
     "https://www.bing.com/*",
     "https://search.brave.com/*",
     "https://type.fit/*"
-  ]
+  ],
+  "commands": {
+    "capture-task": {
+      "suggested_key": {
+        "default": "Alt+Shift+T"
+      },
+      "description": "Save the current page as a task"
+    },
+    "capture-note": {
+      "suggested_key": {
+        "default": "Alt+Shift+N"
+      },
+      "description": "Save the selection, or the current page, as a note"
+    },
+    "capture-link": {
+      "suggested_key": {
+        "default": "Alt+Shift+L"
+      },
+      "description": "Save the current page as a shortcut"
+    },
+    "open-search": {
+      "suggested_key": {
+        "default": "Alt+Shift+K"
+      },
+      "description": "Open the dashboard and search your tasks, notes and links"
+    }
+  }
 }

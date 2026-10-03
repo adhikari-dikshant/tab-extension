@@ -1,9 +1,7 @@
-import { ArrowUpRightIcon as ArrowUpRight } from '@phosphor-icons/react/dist/csr/ArrowUpRight'
 import { TimerIcon as Timer } from '@phosphor-icons/react/dist/csr/Timer'
 import { useEffect, useState } from 'react'
 import { BentoCard } from '../BentoGrid'
 import { CardEmpty, CardSkeleton } from '../CardState'
-import { Modal } from '../Modal'
 import {
     domainColor,
     formatDuration,
@@ -49,7 +47,6 @@ export default function ScreenTimeCard() {
     const [settings, setSettings] = useStorageValue('settings', DEFAULT_SETTINGS)
     const [permission, setPermission] = useState<'checking' | 'granted' | 'denied'>('checking')
     const [today, setToday] = useState<ScreenTimeDay | null>(null)
-    const [modalOpen, setModalOpen] = useState(false)
     const [range, setRange] = useState<'today' | 'week'>('today')
     const [weekDays, setWeekDays] = useState<ScreenTimeDay[] | null>(null)
     const [yesterday, setYesterday] = useState<ScreenTimeDay | null>(null)
@@ -68,11 +65,11 @@ export default function ScreenTimeCard() {
         getScreenTimeDay(yesterdayDate).then(setYesterday)
     }, [permission])
 
+    // Fetched when the week view is first asked for, then kept — seven days of reads is not worth
+    // repeating every time the toggle flips back and forth.
     useEffect(() => {
-        if (modalOpen && range === 'week' && weekDays === null) {
-            getScreenTimeRange(7).then(setWeekDays)
-        }
-    }, [modalOpen, range, weekDays])
+        if (range === 'week' && weekDays === null) getScreenTimeRange(7).then(setWeekDays)
+    }, [range, weekDays])
 
     const enable = () => {
         chrome.permissions.request({ permissions: ['tabs', 'idle'] }, (granted) => {
@@ -112,85 +109,66 @@ export default function ScreenTimeCard() {
     const totalWeek = weekDays ? weekDays.reduce((sum, d) => sum + d.totalSeconds, 0) : 0
     const topWeek = weekDays ? topDomains(mergeDomains(weekDays)) : []
 
-    const displayedTotal = range === 'today' ? totalToday : totalWeek
-    const displayedTop = range === 'today' ? topToday : topWeek
-
     const vsYesterday = yesterday
         ? sumDay(yesterday) === 0
             ? null
             : Math.round(((totalToday - sumDay(yesterday)) / sumDay(yesterday)) * 100)
         : null
 
+    const displayedTotal = range === 'today' ? totalToday : totalWeek
+    const displayedTop = range === 'today' ? topToday : topWeek
+    const loadingWeek = range === 'week' && weekDays === null
+
     return (
-        <>
-            <button type="button" onClick={() => setModalOpen(true)} className="screentime-trigger text-left" aria-label="View screen time details">
-                <BentoCard title="Screen time" className="screentime-card">
-                    <div className="space-y-2">
-                            <p className="screen-total">{formatDuration(totalToday)}</p>
-                            <span className="screen-label">spent online today <ArrowUpRight size={14} /></span>
-                            <SegmentedBar domains={topToday} total={totalToday} />
-                            <div className="screen-legend">{topToday.slice(0, 2).map(([domain]) => <span key={domain}><i style={{ backgroundColor: domainColor(domain) }} />{domain}</span>)}{totalToday === 0 && <span>Your activity will appear here.</span>}</div>
+        <BentoCard
+            title="Screen time"
+            className="screentime-card"
+            action={
+                <div className="screen-range" role="group" aria-label="Screen time period">
+                    {(['today', 'week'] as const).map((option) => (
+                        <button
+                            key={option}
+                            type="button"
+                            onClick={() => setRange(option)}
+                            aria-pressed={range === option}
+                        >
+                            {option === 'today' ? 'Day' : 'Week'}
+                        </button>
+                    ))}
+                </div>
+            }
+        >
+            {loadingWeek ? <CardSkeleton /> : (
+                <div className="screen-content">
+                    <div className="screen-headline">
+                        <p className="screen-total">{formatDuration(displayedTotal)}</p>
+                        {range === 'today' && vsYesterday !== null && (
+                            <span className={`screen-delta ${vsYesterday <= 0 ? 'is-down' : 'is-up'}`}>
+                                {vsYesterday <= 0 ? '↓' : '↑'} {Math.abs(vsYesterday)}% vs yesterday
+                            </span>
+                        )}
+                        {range === 'week' && <span className="screen-label">across 7 days</span>}
                     </div>
-                </BentoCard>
-            </button>
 
-            <Modal
-                open={modalOpen}
-                onClose={() => setModalOpen(false)}
-                title="Screen time"
-                headerActions={
-                    <div className="flex rounded-full border border-black/10 p-0.5 text-xs dark:border-white/10">
-                        {(['today', 'week'] as const).map((r) => (
-                            <button
-                                key={r}
-                                type="button"
-                                onClick={() => setRange(r)}
-                                className={`rounded-full px-2.5 py-1 capitalize ${
-                                    range === r ? 'bg-black text-white dark:bg-white dark:text-black' : ''
-                                }`}
-                            >
-                                {r}
-                            </button>
-                        ))}
-                    </div>
-                }
-            >
-                <div className="space-y-4">
-                    {range === 'week' && weekDays === null ? (
-                        <CardSkeleton />
+                    <SegmentedBar domains={displayedTop} total={displayedTotal} />
+
+                    {displayedTotal === 0 ? (
+                        <p className="screen-label">Your activity will appear here.</p>
                     ) : (
-                        <>
-                            <div>
-                                <p className="text-3xl font-light">{formatDuration(displayedTotal)}</p>
-                                {range === 'today' && vsYesterday !== null && (
-                                    <p className="text-xs text-neutral-400">
-                                        {vsYesterday <= 0 ? '↓' : '↑'} {Math.abs(vsYesterday)}% vs yesterday
-                                    </p>
-                                )}
-                            </div>
-
-                            <SegmentedBar domains={displayedTop} total={displayedTotal} />
-
-                            {displayedTotal === 0 ? (
-                                <CardEmpty>No activity tracked yet for this period.</CardEmpty>
-                            ) : (
-                                <ul className="space-y-1.5">
-                                    {displayedTop.map(([domain, seconds]) => (
-                                        <li key={domain} className="flex items-center gap-2 text-sm">
-                                            <span
-                                                className="h-2.5 w-2.5 shrink-0 rounded-full"
-                                                style={{ backgroundColor: domainColor(domain) }}
-                                            />
-                                            <span className="min-w-0 flex-1 truncate">{domain}</span>
-                                            <span className="text-neutral-400">{formatDuration(seconds)}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </>
+                        /* The full breakdown lives on the card: these are the numbers the card is
+                           for, and a tap-through to read them was the whole friction. */
+                        <ul className="screen-breakdown themed-scrollbar">
+                            {displayedTop.map(([domain, seconds]) => (
+                                <li key={domain}>
+                                    <i style={{ backgroundColor: domainColor(domain) }} />
+                                    <span className="screen-domain">{domain}</span>
+                                    <span className="screen-duration tabular-nums">{formatDuration(seconds)}</span>
+                                </li>
+                            ))}
+                        </ul>
                     )}
                 </div>
-            </Modal>
-        </>
+            )}
+        </BentoCard>
     )
 }

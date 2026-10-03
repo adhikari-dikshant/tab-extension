@@ -1,5 +1,9 @@
 import './productivity'
+import './capture'
 import { changeStored } from '../lib/productivity'
+import { runMigrations } from '../lib/migrations'
+import { syncOverlayRegistration } from '../lib/overlay'
+import { DEFAULT_SETTINGS, touch, type Settings } from '../lib/storage'
 import { dateKey, normalizeDomain, storageKeyForDate, type ScreenTimeDay } from '../lib/screentime'
 
 const DAILY_RESET_ALARM = 'daily-reset'
@@ -16,12 +20,16 @@ function scheduleDailyReset() {
 async function runDailyReset() {
     await changeStored('todos', [], (list) => list
         .filter((todo) => (todo.repeat && todo.repeat !== 'none') || todo.pinned || !todo.done)
-        .map((todo) => todo.pinned && !todo.dueDate && (!todo.repeat || todo.repeat === 'none') ? { ...todo, done: false } : todo))
+        .map((todo) => todo.pinned && !todo.dueDate && (!todo.repeat || todo.repeat === 'none') ? touch({ ...todo, done: false }) : todo))
 }
 
 chrome.runtime.onInstalled.addListener(() => {
     scheduleDailyReset()
     chrome.alarms.create(SCREEN_TIME_FLUSH_ALARM, { periodInMinutes: 0.5 })
+    // Run here as well as on the dashboard, so a capture command works correctly even if the user
+    // updates and captures a page before ever opening a new tab.
+    void runMigrations()
+    void reconcileOverlay()
 })
 chrome.runtime.onStartup.addListener(scheduleDailyReset)
 
@@ -159,6 +167,32 @@ chrome.permissions.onAdded.addListener((delta) => {
         if (granted) wireScreenTimeListeners()
     })
 })
+
+// ---------- Page overlay ----------
+// The content script is registered at runtime rather than declared in the manifest so the settings
+// switch can turn it off. Reconcile on every event that could change the answer, since the
+// registration outlives the service worker, and both the setting and the user's site-access choice
+// in Chrome can change at any time.
+
+// A fresh install, or settings saved before the bubble existed, has no stored value: that means the
+// default, which is on.
+const overlayOn = (settings: unknown) => (settings as Partial<Settings> | undefined)?.overlayEnabled ?? DEFAULT_SETTINGS.overlayEnabled
+
+async function reconcileOverlay() {
+    const { settings } = await chrome.storage.local.get('settings')
+    await syncOverlayRegistration(overlayOn(settings))
+}
+
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local' || !changes.settings) return
+    if (overlayOn(changes.settings.oldValue) !== overlayOn(changes.settings.newValue)) void reconcileOverlay()
+})
+
+// A revoked host permission must stop the script, not leave it registered and failing.
+chrome.permissions.onRemoved.addListener(() => { void reconcileOverlay() })
+chrome.permissions.onAdded.addListener(() => { void reconcileOverlay() })
+chrome.runtime.onStartup.addListener(() => { void reconcileOverlay() })
+void reconcileOverlay()
 
 // ---------- Wiring ----------
 

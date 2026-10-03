@@ -1,12 +1,22 @@
 import { useEffect, useState } from 'react'
+import { CheckIcon } from '@phosphor-icons/react/dist/csr/Check'
 import { CompassIcon } from '@phosphor-icons/react/dist/csr/Compass'
 import { PlusIcon } from '@phosphor-icons/react/dist/csr/Plus'
 import { BentoCard } from '../BentoGrid'
 import { CardEmpty, CardSkeleton } from '../CardState'
 import { ShortcutIcon } from '../ShortcutIcon'
+import { createShortcut } from '../../lib/storage'
 import { useStorageValue } from '../../lib/useStorageValue'
 
 const REQUIRED_PERMISSIONS: chrome.runtime.ManifestPermission[] = ['topSites']
+
+function hostOf(url: string): string {
+    try {
+        return new URL(url).hostname.replace(/^www\./, '')
+    } catch {
+        return url
+    }
+}
 
 export default function MostVisitedCard() {
     const [permission, setPermission] = useState<'checking' | 'granted' | 'denied'>('checking')
@@ -26,19 +36,38 @@ export default function MostVisitedCard() {
             if (granted) chrome.topSites.get(setSites)
         })
     }
+    const isSaved = (site: chrome.topSites.MostVisitedURL) => shortcuts.some((shortcut) => shortcut.url === site.url)
     const addAsShortcut = (site: chrome.topSites.MostVisitedURL) => {
-        if (shortcuts.some((shortcut) => shortcut.url === site.url)) return
-        setShortcuts([...shortcuts, { id: crypto.randomUUID(), label: site.title || site.url, url: site.url }])
+        if (isSaved(site)) return
+        setShortcuts([...shortcuts, createShortcut(site.title || site.url, site.url)])
     }
     return <BentoCard title="Most visited" className="visited-card" action={sites?.length ? <span className="card-meta">{sites.length} SITES</span> : undefined}>
         {permission === 'checking' || (permission === 'granted' && sites === null) ? <CardSkeleton /> : permission === 'denied' ? <CardEmpty>
             <span className="empty-illustration"><CompassIcon size={25} /></span><strong>Your usual corner of the internet.</strong><p className="mb-2">Keep your frequently visited sites close.</p>
             <button type="button" onClick={requestAccess} className="productivity-button mt-5">Enable most visited</button>
         </CardEmpty> : !sites?.length ? <CardEmpty>Nothing yet — browse a bit and this fills in automatically.</CardEmpty> : <ul className="visited-list">
-            {sites.map((site) => <li key={site.url} className="visited-item group relative">
-                <button type="button" onClick={() => window.open(site.url, '_self')} title={site.title} className="visited-link"><ShortcutIcon url={site.url} label={site.title} className="h-5 w-5" /><span>{site.title || site.url}</span></button>
-                <button type="button" onClick={() => addAsShortcut(site)} aria-label={`Add ${site.title} to shortcuts`} className="visited-save icon-control"><PlusIcon size={14} /></button>
-            </li>)}
+            {sites.map((site) => {
+                const saved = isSaved(site)
+                const host = hostOf(site.url)
+                return <li key={site.url} className="visited-item">
+                    <a href={site.url} title={site.title || host} className="visited-link">
+                        <span className="visited-icon"><ShortcutIcon url={site.url} label={site.title || host} className="visited-favicon" /></span>
+                        <span className="visited-text">
+                            <span className="visited-title">{site.title || host}</span>
+                            <span className="visited-host">{host}</span>
+                        </span>
+                    </a>
+                    <button
+                        type="button"
+                        onClick={() => addAsShortcut(site)}
+                        aria-pressed={saved}
+                        aria-label={saved ? `${site.title || host} is in shortcuts` : `Add ${site.title || host} to shortcuts`}
+                        className="visited-save"
+                    >
+                        {saved ? <CheckIcon size={12} weight="bold" /> : <PlusIcon size={12} weight="bold" />}
+                    </button>
+                </li>
+            })}
         </ul>}
     </BentoCard>
 }

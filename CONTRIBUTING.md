@@ -37,3 +37,24 @@ We welcome all developers to contribute to Daily Workspace! Your efforts are tru
 - If your changes introduce new functionality, update the README's feature list and any relevant documentation.
 
 By following these guidelines, we can maintain a clean and efficient codebase while making the review process faster and easier for everyone. Thank you for your contributions and for helping improve this project!
+
+## 10. Releasing a Version
+
+Releases follow [Semantic Versioning](https://semver.org/). Below `1.0.0`, a minor bump may still
+change how data is stored, so every release says what happens to existing data on upgrade.
+
+1. **Bump the version in both files.** `public/manifest.json` is the one browsers and stores read —
+   it must increase for an update to be recognised. Keep `package.json` on the same number; the
+   backup export stamps files with the manifest version, so a mismatch makes exports misreport
+   which build produced them.
+2. **Add a `CHANGELOG.md` entry** under a new version heading, with `Added` / `Changed` / `Fixed`
+   sections and an **Upgrading** section covering: data migrations that run on first open, whether
+   older backup files still import, and any new permissions (say explicitly whether the browser will
+   prompt, since a permission that triggers a warning disables the extension until the user
+   re-approves it).
+3. **Verify before tagging.** `npm run lint`, `npx tsc -b`, `npm test`, `npm run build`, and
+   `npm run build:firefox` must all pass.
+4. **Tag and publish.** Tag as `v<version>` and push the tag, then create a GitHub Release whose
+   notes are that changelog entry.
+5. **Update the store listings** if the extension is published: the Chrome Web Store and
+   addons.mozilla.org each have their own "What's new" field, which is not generated from this repo.

@@ -1,4 +1,4 @@
-import type { FocusState, StorageSchema, Todo } from './storage'
+import { touch, type FocusState, type StorageSchema, type Todo } from './storage'
 
 /** Serialize read-modify-write operations across extension tabs and the service worker. */
 export function changeStored<K extends keyof StorageSchema>(key: K, fallback: StorageSchema[K], change: (value: StorageSchema[K]) => StorageSchema[K]) {
@@ -24,11 +24,11 @@ export function nextOccurrence(dueDate: string | undefined, repeat: 'daily' | 'w
 }
 
 export function completeTodo(todo: Todo, now = new Date()): Todo {
-    if (todo.done) return { ...todo, done: false }
+    if (todo.done) return touch({ ...todo, done: false }, now.getTime())
     if (todo.repeat && todo.repeat !== 'none') {
-        return { ...todo, dueDate: nextOccurrence(todo.dueDate, todo.repeat, now), done: false, completedCount: (todo.completedCount || 0) + 1, lastCompletedAt: now.getTime() }
+        return touch({ ...todo, dueDate: nextOccurrence(todo.dueDate, todo.repeat, now), done: false, completedCount: (todo.completedCount || 0) + 1, lastCompletedAt: now.getTime() }, now.getTime())
     }
-    return { ...todo, done: true, lastCompletedAt: now.getTime() }
+    return touch({ ...todo, done: true, lastCompletedAt: now.getTime() }, now.getTime())
 }
 
 export const EMPTY_FOCUS: FocusState = { session: null, history: [] }

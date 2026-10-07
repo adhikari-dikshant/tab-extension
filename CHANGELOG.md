@@ -7,6 +7,26 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 minor releases may still change how data is stored — each one documents what happens to your
 existing data when you upgrade.
 
+## [0.2.1] — 2026-10-07
+
+**Fixes a broken 0.2.0 release. If your new tab says "CRXJS DEV MODE" or "Cannot connect to
+localhost:5173", update to 0.2.1 and it will work again.** Nothing you had saved was affected —
+tasks, notes, shortcuts and settings were never touched by the fault.
+
+### Fixed
+
+- 0.2.0 was packaged from a development build by mistake. A development build loads the dashboard
+  from a local server that only exists on a developer's machine, so for everyone else the new tab
+  page could not load at all. 0.2.1 is the same release, packaged correctly.
+
+### Internal
+
+- `npm run dev` now writes to `dist-dev/` instead of `dist/`, so a preview run can no longer
+  overwrite the production build.
+- `npm run package` builds, verifies and zips both browser targets. Verification refuses to package
+  a folder containing dev-server references, a stub new tab page, a version that disagrees with
+  `package.json`, or a missing/invalid overlay bundle.
+
 ## [0.2.0] — 2026-10-03
 
 Your tasks, notes and timer follow you onto the pages you're actually working on, and the dashboard
@@ -141,6 +161,7 @@ Initial version: bento dashboard with shortcuts, to-dos, notes, weather, screen 
 cards; an icon rail of side panels; search with suggestions, voice input and `t:` / `b:` / `@`
 commands; a focus timer; themes, accents, wallpapers; and manual backup and restore.
 
+[0.2.1]: https://github.com/adhikari-dikshant/tab-extension/releases/tag/v0.2.1
 [0.2.0]: https://github.com/adhikari-dikshant/tab-extension/releases/tag/v0.2.0
 [0.1.0]: https://github.com/adhikari-dikshant/tab-extension/releases/tag/v0.1.0
 [0.0.1]: https://github.com/adhikari-dikshant/tab-extension/releases/tag/v0.0.1

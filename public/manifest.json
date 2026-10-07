@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Daily Workspace \u2014 New Tab Dashboard",
   "short_name": "Daily Workspace",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Your daily essentials in a bento dashboard. Organize tasks, notes and shortcuts, check the weather, and stay focused.",
   "icons": {
     "16": "icons/icon16.png",

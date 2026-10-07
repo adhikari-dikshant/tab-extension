@@ -1,7 +1,7 @@
 {
   "name": "newtab-extension",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,7 +9,9 @@
     "build:firefox": "npm run build && node scripts/build-firefox.mjs",
     "lint": "eslint .",
     "test": "node --experimental-strip-types --import ./tests/register.mjs --test tests/*.test.mjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "verify": "node scripts/verify-build.mjs",
+    "package": "npm run build:firefox && node scripts/package.mjs"
   },
   "dependencies": {
     "@fontsource-variable/plus-jakarta-sans": "^5.3.0",

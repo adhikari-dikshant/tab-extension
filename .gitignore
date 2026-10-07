@@ -27,3 +27,10 @@ branding
 *.njsproj
 *.sln
 *.sw?
+
+# Dev-server output (vite.config.ts points `vite dev` here so it can never
+# overwrite the production build in dist/).
+dist-dev
+
+# Store upload zips, produced by `npm run package`.
+release

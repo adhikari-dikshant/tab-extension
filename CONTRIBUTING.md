@@ -54,7 +54,14 @@ change how data is stored, so every release says what happens to existing data o
    re-approves it).
 3. **Verify before tagging.** `npm run lint`, `npx tsc -b`, `npm test`, `npm run build`, and
    `npm run build:firefox` must all pass.
-4. **Tag and publish.** Tag as `v<version>` and push the tag, then create a GitHub Release whose
+4. **Package with `npm run package`.** Never zip `dist/` by hand and never upload it directly. The
+   script rebuilds both targets, verifies them, and writes `release/*.zip`. Verification exists
+   because a development build is indistinguishable from a real one by eye — same folder, same
+   manifest, same icons — and the only symptom is that every user's new tab becomes
+   "CRXJS DEV MODE". That shipped as 0.2.0.
+5. **Install the zip before publishing it.** Unzip it somewhere fresh, load it unpacked, and open a
+   new tab. This is the only step that catches a packaging fault end to end.
+6. **Tag and publish.** Tag as `v<version>` and push the tag, then create a GitHub Release whose
    notes are that changelog entry.
-5. **Update the store listings** if the extension is published: the Chrome Web Store and
+7. **Update the store listings** if the extension is published: the Chrome Web Store and
    addons.mozilla.org each have their own "What's new" field, which is not generated from this repo.

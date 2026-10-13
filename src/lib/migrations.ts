@@ -31,6 +31,7 @@ const CARDS_REMOVED_IN: Record<number, string[]> = {
 const FIELDS_REMOVED_IN: Record<number, string[]> = {
     1: ['notesEnabled'],
     2: ['featuredCard'],
+    4: ['overlaySide'],
 }
 
 /** Fields dropped in an earlier version that an object on disk may still carry. */
@@ -38,11 +39,19 @@ interface LegacySettings {
     notesEnabled?: boolean
     /** v1 emphasised exactly one card; v2 emphasises a pair. */
     featuredCard?: string
+    /** v3 pinned the bubble to a side; v4 also records where along that side it sits. */
+    overlaySide?: string
 }
 
 /** Settings as they may exist on disk: any current field can be absent, and dropped fields can
  * still be present. */
 export type StoredSettings = Partial<Settings> & LegacySettings
+
+function isHandlePosition(value: unknown): value is Settings['overlayHandle'] {
+    if (typeof value !== 'object' || value === null) return false
+    const candidate = value as { side?: unknown; offsetY?: unknown }
+    return (candidate.side === 'left' || candidate.side === 'right') && typeof candidate.offsetY === 'number'
+}
 
 /**
  * Brings a stored settings object up to SETTINGS_VERSION. Pure and idempotent — re-running it on
@@ -87,6 +96,12 @@ export function migrateSettings(stored: StoredSettings): Settings {
             ? [kept, ...DEFAULT_SETTINGS.featuredCards.filter((id) => id !== kept)].slice(0, 2)
             : [...DEFAULT_SETTINGS.featuredCards]
     }
+    // The bubble's side became one half of a draggable position. Carry the chosen side over and
+    // centre it vertically, which is where it had always been drawn.
+    const handle = isHandlePosition(stored.overlayHandle)
+        ? stored.overlayHandle
+        : { side: stored.overlaySide === 'right' ? 'right' as const : 'left' as const, offsetY: 0.5 }
+
     // Anything retired above, or never a card, cannot hold a featured slot.
     featured = featured.filter((id) => BENTO_WIDGET_IDS.includes(id))
     if (!featured.length) featured = [...DEFAULT_SETTINGS.featuredCards]
@@ -94,6 +109,7 @@ export function migrateSettings(stored: StoredSettings): Settings {
     return {
         ...DEFAULT_SETTINGS, ...next,
         widgetsEnabled: enabled, cardOrder: order, featuredCards: featured.slice(0, 2),
+        overlayHandle: handle,
         settingsVersion: SETTINGS_VERSION,
     }
 }

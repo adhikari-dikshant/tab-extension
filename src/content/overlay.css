@@ -84,6 +84,44 @@
     border-radius: 12px 0 0 12px;
 }
 
+/* Mid-drag the handle is detached from both edges and follows the pointer, so it needs its full
+   border and no edge rounding, and it must not animate towards where it already is. */
+.handle[data-free] {
+    right: auto;
+    transform: translate(-50%, -50%);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    transition: none;
+}
+
+.handle[data-dragging],
+.timer[data-dragging] {
+    opacity: 1;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .26);
+    cursor: grabbing;
+}
+
+/* The drag grip. Separate from the buttons so a press on an icon still opens the panel and only a
+   press here starts a drag — a handle that moves whenever you try to click it is unusable. */
+.grip {
+    display: block;
+    flex-shrink: 0;
+    width: 18px;
+    height: 10px;
+    border-radius: 3px;
+    cursor: grab;
+    opacity: .5;
+    background-image: radial-gradient(currentcolor 1px, transparent 1px);
+    background-size: 5px 5px;
+    background-position: 1px 1px;
+    color: var(--muted);
+    touch-action: none;
+}
+
+.grip:hover {
+    opacity: 1;
+}
+
 .handle button {
     position: relative;
     display: flex;
@@ -304,8 +342,8 @@
 /* ── Focus timer, top-right ─────────────────────────────────────────────────────────────────── */
 .timer {
     position: fixed;
-    top: 14px;
-    right: 14px;
+    /* `left`/`top` come from the stored ratio; the translate makes them mean the timer's centre. */
+    transform: translate(-50%, -50%);
     display: flex;
     align-items: center;
     gap: 8px;

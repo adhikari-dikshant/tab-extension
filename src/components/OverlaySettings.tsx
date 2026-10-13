@@ -44,6 +44,14 @@ export default function OverlaySettings() {
         setSettings({ ...settings, overlayEnabled: true })
     }
 
+    // Nothing to reset when neither has been moved, so the button says so rather than being a
+    // no-op the user has to try to find out.
+    const atDefaultPosition =
+        settings.overlayHandle.side === DEFAULT_SETTINGS.overlayHandle.side
+        && settings.overlayHandle.offsetY === DEFAULT_SETTINGS.overlayHandle.offsetY
+        && settings.overlayTimer.x === DEFAULT_SETTINGS.overlayTimer.x
+        && settings.overlayTimer.y === DEFAULT_SETTINGS.overlayTimer.y
+
     const unblock = (host: string) => {
         setSettings({ ...settings, overlayBlockedHosts: settings.overlayBlockedHosts.filter((item) => item !== host) })
     }
@@ -57,21 +65,24 @@ export default function OverlaySettings() {
             sits under the site’s own dialogs, hides in fullscreen, and never appears on sign-in or checkout
             pages. Between sessions the focus timer is a small icon you can click to start one.
         </p>
-        {settings.overlayEnabled && <SettingRow label="Bubble side" description="Move it off whatever the site keeps on that edge">
-            <div className="flex rounded-full border border-black/10 p-0.5 text-xs dark:border-white/10">
-                {(['left', 'right'] as const).map((side) => (
-                    <button
-                        key={side}
-                        type="button"
-                        onClick={() => setSettings({ ...settings, overlaySide: side })}
-                        aria-pressed={settings.overlaySide === side}
-                        className={`rounded-full px-2.5 py-1 capitalize ${settings.overlaySide === side ? 'bg-(--accent) text-white' : 'text-neutral-400'}`}
-                    >
-                        {side}
-                    </button>
-                ))}
-            </div>
-        </SettingRow>}
+        {settings.overlayEnabled && granted && <>
+            <SettingRow label="Tasks & note bubble" description="A collapsed handle on the edge of the page">
+                <Switch label="Tasks and note bubble" checked={settings.overlayTasksEnabled} onCheckedChange={(overlayTasksEnabled) => setSettings({ ...settings, overlayTasksEnabled })} />
+            </SettingRow>
+            <SettingRow label="Focus timer" description="Shown only while a session is running">
+                <Switch label="Focus timer on other sites" checked={settings.overlayTimerEnabled} onCheckedChange={(overlayTimerEnabled) => setSettings({ ...settings, overlayTimerEnabled })} />
+            </SettingRow>
+            <SettingRow label="Position" description="Drag either one on any page. The bubble snaps to the nearest side.">
+                <button
+                    type="button"
+                    onClick={() => setSettings({ ...settings, overlayHandle: DEFAULT_SETTINGS.overlayHandle, overlayTimer: DEFAULT_SETTINGS.overlayTimer })}
+                    disabled={atDefaultPosition}
+                    className="rounded-full border border-black/10 px-3 py-1.5 text-xs font-medium disabled:opacity-40 dark:border-white/10"
+                >
+                    Reset
+                </button>
+            </SettingRow>
+        </>}
         {settings.overlayBlockedHosts.length > 0 && <div className="py-2">
             <p className="productivity-muted mb-1">Hidden on these sites:</p>
             <ul className="flex flex-wrap gap-1.5">

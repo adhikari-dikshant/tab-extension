@@ -10,6 +10,19 @@ import { DEFAULT_SETTINGS, createNote, createTodo, touch, type Note } from '../l
 import { useStorageValue } from '../lib/useStorageValue'
 import { changeStored, completeTodo, EMPTY_FOCUS, startFocus } from '../lib/productivity'
 import { noteFromPage, taskFromPage } from '../lib/capture'
+import { clampTimer, snapHandleToEdge } from '../lib/overlayPosition'
+import { useDrag } from './useDrag'
+
+/** Viewport size, tracked so a stored ratio resolves to the right pixels after a window resize. */
+function useViewport() {
+    const [viewport, setViewport] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }))
+    useEffect(() => {
+        const onResize = () => setViewport({ width: window.innerWidth, height: window.innerHeight })
+        window.addEventListener('resize', onResize)
+        return () => window.removeEventListener('resize', onResize)
+    }, [])
+    return viewport
+}
 
 /** Resolves the theme the overlay should use. It cannot read the dashboard's document, so "system"
  * is answered by this page's own media query. */
@@ -124,9 +137,18 @@ function useFullscreen() {
 }
 
 function FocusTimer() {
+    const [settings, setSettings] = useStorageValue('settings', DEFAULT_SETTINGS)
     const [focus] = useStorageValue('focus', EMPTY_FOCUS)
     const [now, setNow] = useState(Date.now)
+    const viewport = useViewport()
+    const element = useRef<HTMLDivElement>(null)
     const session = focus.session
+
+    const drag = useDrag((point) => {
+        const rect = element.current?.getBoundingClientRect()
+        const size = { width: rect?.width ?? 150, height: rect?.height ?? 34 }
+        setSettings({ ...settings, overlayTimer: clampTimer(point, viewport, size) })
+    })
 
     useEffect(() => {
         if (session?.status !== 'running') return
@@ -160,7 +182,21 @@ function FocusTimer() {
         }
     })
 
-    return <div className="timer" data-mode={session.mode} role="status" aria-label={`${session.mode === 'break' ? 'Break' : 'Focus'}: ${time} remaining`}>
+    // Follows the pointer while dragging, then settles wherever it was released.
+    const position = drag.point
+        ? { left: drag.point.x, top: drag.point.y }
+        : { left: settings.overlayTimer.x * viewport.width, top: settings.overlayTimer.y * viewport.height }
+
+    return <div
+        ref={element}
+        className="timer"
+        data-mode={session.mode}
+        data-dragging={drag.dragging || undefined}
+        style={{ '--progress': progress, ...position } as CSSProperties}
+        role="status"
+        aria-label={`${session.mode === 'break' ? 'Break' : 'Focus'}: ${time} remaining`}
+    >
+        <span className="grip" title="Drag to move" aria-hidden="true" {...drag.handlers} />
         <span className="ring" style={{ '--progress': progress } as CSSProperties} aria-hidden="true" />
         <time>{time}</time>
         <span className="label">{session.mode === 'break' ? 'Break' : session.label}</span>
@@ -177,6 +213,16 @@ export default function OverlayPanel() {
     const theme = useTheme()
     const fullscreen = useFullscreen()
     const panelRef = useRef<HTMLDivElement>(null)
+    const handleRef = useRef<HTMLDivElement>(null)
+    const viewport = useViewport()
+
+    // Dropped anywhere, the handle resolves to the nearest side edge — it is a vertical column of
+    // buttons, so a top or bottom edge would need a different shape entirely. The vertical position
+    // is kept, so dragging it clear of whatever a site pins to the middle of an edge sticks.
+    const handleDrag = useDrag((point) => {
+        const height = handleRef.current?.getBoundingClientRect().height ?? 70
+        setSettings({ ...settings, overlayHandle: snapHandleToEdge(point, viewport, height) })
+    })
 
     // Escape closes, and so does a click on the page. Dismissing has to be as cheap as opening, or
     // the panel becomes something to manage instead of something to glance at.
@@ -220,10 +266,17 @@ export default function OverlayPanel() {
 
     if (fullscreen) return null
 
-    return <div className="root" data-theme={theme} data-side={settings.overlaySide}>
+    const handle = settings.overlayHandle
+    // While dragging it follows the pointer freely; on release it animates to the snapped edge, so
+    // the snap is something the user sees happen rather than a jump they have to infer.
+    const handlePosition = handleDrag.point
+        ? { left: handleDrag.point.x, top: handleDrag.point.y, right: 'auto' as const }
+        : { top: handle.offsetY * viewport.height }
+
+    return <div className="root" data-theme={theme} data-side={handle.side}>
         <FocusTimer />
 
-        {open ? (
+        {open && settings.overlayTasksEnabled ? (
             <div className="panel" ref={panelRef} role="dialog" aria-label="Tasks and notes">
                 <div className="panel-head">
                     <div className="panel-tabs" role="tablist">
@@ -248,13 +301,24 @@ export default function OverlayPanel() {
                     <button onClick={() => void captureNote()}>Save as note</button>
                 </div>
             </div>
-        ) : (
-            <div className="handle">
-                <button onClick={() => setOpen('todo')} aria-label={`Tasks${openCount ? `, ${openCount} open` : ''}`} title="Tasks">
+        ) : settings.overlayTasksEnabled && (
+            <div
+                ref={handleRef}
+                className="handle"
+                data-dragging={handleDrag.dragging || undefined}
+                data-free={handleDrag.point ? true : undefined}
+                style={handlePosition as CSSProperties}
+            >
+                <span className="grip" title="Drag to move" aria-hidden="true" {...handleDrag.handlers} />
+                <button
+                    onClick={() => { if (!handleDrag.consumedClick()) setOpen('todo') }}
+                    aria-label={`Tasks${openCount ? `, ${openCount} open` : ''}`}
+                    title="Tasks"
+                >
                     <ChecksIcon size={17} />
                     {openCount > 0 && <span className="count">{openCount > 99 ? '99+' : openCount}</span>}
                 </button>
-                <button onClick={() => setOpen('notes')} aria-label="Note" title="Note">
+                <button onClick={() => { if (!handleDrag.consumedClick()) setOpen('notes') }} aria-label="Note" title="Note">
                     <NotePencilIcon size={17} />
                 </button>
             </div>

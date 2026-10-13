@@ -101,3 +101,26 @@ test('an old backup is brought forward to the current settings version on import
     assert.ok(settings.widgetsEnabled.includes('workspaces'))
     assert.ok(!('notesEnabled' in settings))
 })
+
+test('a dragged position survives a backup, and a corrupt one cannot park a bubble off-screen', () => {
+    const kept = sanitizeSettings({ overlayHandle: { side: 'right', offsetY: 0.18 }, overlayTimer: { x: 0.3, y: 0.7 } })
+    assert.deepEqual(kept.overlayHandle, { side: 'right', offsetY: 0.18 })
+    assert.deepEqual(kept.overlayTimer, { x: 0.3, y: 0.7 })
+
+    // Ratios outside 0..1, or not numbers at all, are clamped back onto the screen.
+    const hostile = sanitizeSettings({ overlayHandle: { side: 'nope', offsetY: 99 }, overlayTimer: { x: -5, y: 'top' } })
+    assert.equal(hostile.overlayHandle.side, 'left')
+    assert.ok(hostile.overlayHandle.offsetY >= 0 && hostile.overlayHandle.offsetY <= 1)
+    assert.ok(hostile.overlayTimer.x >= 0 && hostile.overlayTimer.x <= 1)
+    assert.ok(hostile.overlayTimer.y >= 0 && hostile.overlayTimer.y <= 1)
+
+    // The pre-v4 spelling still positions correctly.
+    assert.equal(sanitizeSettings({ overlaySide: 'right' }).overlayHandle.side, 'right')
+})
+
+test('the two bubbles can be switched on independently', () => {
+    assert.equal(sanitizeSettings({ overlayTasksEnabled: false }).overlayTasksEnabled, false)
+    assert.equal(sanitizeSettings({ overlayTimerEnabled: false }).overlayTimerEnabled, false)
+    assert.equal(sanitizeSettings({}).overlayTasksEnabled, true)
+    assert.equal(sanitizeSettings({}).overlayTimerEnabled, true)
+})

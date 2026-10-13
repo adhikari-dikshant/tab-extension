@@ -7,6 +7,34 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 minor releases may still change how data is stored — each one documents what happens to your
 existing data when you upgrade.
 
+## [0.3.0] — 2026-10-13
+
+### Added
+
+- **The focus timer has its own switch**, separate from the tasks bubble. Settings → Productivity now
+  has one for each, so you can have the timer without the list or the list without the timer.
+- **Both bubbles can be dragged.** Each has a grip — the dotted strip — so pressing an icon still
+  opens the panel and only the grip starts a drag.
+- **The tasks bubble snaps to an edge.** Drop it anywhere, including the middle of the page, and it
+  takes the shortest straight path to the nearer side and attaches there, keeping the height you
+  dropped it at. You see it travel, so where it went is never a guess.
+- **The focus timer stays exactly where you put it**, since it is a readout you position
+  deliberately rather than a tab that belongs on an edge. It is kept fully on screen.
+- **Reset** under Settings → Productivity puts both back, and is disabled when neither has moved.
+
+### Changed
+
+- Positions are stored as proportions of the window, so a bubble parked against the right edge of a
+  wide monitor is still against the right edge on a laptop, instead of ending up off-screen.
+- The "Bubble on other sites" switch now reflects whether the bubble is *actually running*. It was
+  possible for it to read "on" while nothing appeared, because the setting defaults to on but
+  nothing is drawn until the host permission is granted.
+
+### Upgrading from 0.2.1
+
+- The side you had chosen carries over, positioned where it had always been drawn — centred down
+  that edge.
+
 ## [0.2.1] — 2026-10-07
 
 **Fixes a broken 0.2.0 release. If your new tab says "CRXJS DEV MODE" or "Cannot connect to
@@ -161,6 +189,7 @@ Initial version: bento dashboard with shortcuts, to-dos, notes, weather, screen 
 cards; an icon rail of side panels; search with suggestions, voice input and `t:` / `b:` / `@`
 commands; a focus timer; themes, accents, wallpapers; and manual backup and restore.
 
+[0.3.0]: https://github.com/adhikari-dikshant/tab-extension/releases/tag/v0.3.0
 [0.2.1]: https://github.com/adhikari-dikshant/tab-extension/releases/tag/v0.2.1
 [0.2.0]: https://github.com/adhikari-dikshant/tab-extension/releases/tag/v0.2.0
 [0.1.0]: https://github.com/adhikari-dikshant/tab-extension/releases/tag/v0.1.0

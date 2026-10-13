@@ -89,3 +89,24 @@ test('someone who had weather switched off keeps it off through the move', () =>
     assert.ok(!after.widgetsEnabled.includes('weather'))
     assert.ok(!after.cardOrder.includes('weather'))
 })
+
+test('the bubble side becomes a draggable position without moving it', () => {
+    const after = migrateSettings({ settingsVersion: 3, overlaySide: 'right' })
+    assert.equal(after.overlayHandle.side, 'right', 'the chosen side carries over')
+    assert.equal(after.overlayHandle.offsetY, 0.5, 'and lands where it had always been drawn')
+    assert.ok(!('overlaySide' in after), 'the dropped field does not ride along in exports')
+    assert.equal(migrateSettings({ settingsVersion: 3 }).overlayHandle.side, 'left')
+})
+
+test('a position already dragged is left alone', () => {
+    const dragged = { settingsVersion: 4, overlayHandle: { side: 'right', offsetY: 0.2 } }
+    assert.deepEqual(migrateSettings(dragged).overlayHandle, { side: 'right', offsetY: 0.2 })
+})
+
+test('a malformed stored position falls back rather than parking the bubble off-screen', () => {
+    for (const bad of [null, 'left', { side: 'top', offsetY: 0.5 }, { side: 'left' }, {}]) {
+        const after = migrateSettings({ settingsVersion: 4, overlayHandle: bad })
+        assert.ok(after.overlayHandle.side === 'left' || after.overlayHandle.side === 'right')
+        assert.ok(Number.isFinite(after.overlayHandle.offsetY))
+    }
+})

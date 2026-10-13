@@ -51,7 +51,7 @@ export const ACCENT_PRESETS = [
 ] as const
 
 /** Bumped whenever stored settings need reshaping; see `migrateSettings`. */
-export const SETTINGS_VERSION = 3
+export const SETTINGS_VERSION = 4
 
 export interface Settings {
     settingsVersion: number
@@ -74,11 +74,18 @@ export interface Settings {
     searchSuggestionsEnabled: boolean
     hideMicrophone: boolean
     focusEnabled: boolean
-    /** Floating task/note bubble and focus timer on ordinary web pages. Off until the user grants
-     * the host permission it needs; see `overlay.ts`. */
+    /** Master switch for anything the extension draws on ordinary web pages. Off until the user
+     * grants the host permission it needs; see `overlay.ts`. */
     overlayEnabled: boolean
-    /** Which edge the collapsed bubble sits on, so it can be moved off whatever a site puts there. */
-    overlaySide: 'left' | 'right'
+    /** The tasks/notes bubble, switchable on its own — plenty of people want the timer and not the
+     * list, or the other way round. */
+    overlayTasksEnabled: boolean
+    /** The focus timer readout, likewise switchable on its own. */
+    overlayTimerEnabled: boolean
+    /** Where the user dragged the tasks/notes bubble. See `overlayPosition.ts`. */
+    overlayHandle: { side: 'left' | 'right'; offsetY: number }
+    /** Where the user dragged the focus timer. */
+    overlayTimer: { x: number; y: number }
     /** Hosts the overlay stays out of, for pages where any chrome is unwelcome. */
     overlayBlockedHosts: string[]
     desktopReminders: boolean
@@ -259,8 +266,13 @@ export const DEFAULT_SETTINGS: Settings = {
     searchSuggestionsEnabled: true,
     hideMicrophone: false,
     focusEnabled: true,
+    // On by default, but gated on the host permission at runtime — see OverlaySettings, where the
+    // switch reflects the *effective* state so it never reads "on" while nothing is being drawn.
     overlayEnabled: true,
-    overlaySide: 'left',
+    overlayTasksEnabled: true,
+    overlayTimerEnabled: true,
+    overlayHandle: { side: 'left', offsetY: 0.5 },
+    overlayTimer: { x: 0.92, y: 0.06 },
     overlayBlockedHosts: [],
     desktopReminders: false,
     // To-do and Notes lead, so they are the pair that gets the height; the compact cards fill

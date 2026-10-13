@@ -90,6 +90,12 @@ function num(value: unknown, fallback: number): number {
     return typeof value === 'number' && Number.isFinite(value) ? value : fallback
 }
 
+/** A 0..1 viewport ratio. Anything outside that range would park a bubble off-screen. */
+function ratio(value: unknown, fallback: number): number {
+    const found = num(value, fallback)
+    return Math.min(1, Math.max(0, found))
+}
+
 function id(value: unknown): string {
     const found = str(value, 64)
     return found || crypto.randomUUID()
@@ -151,7 +157,17 @@ export function sanitizeSettings(value: unknown): Settings {
         hideMicrophone: bool(value.hideMicrophone, d.hideMicrophone),
         focusEnabled: bool(value.focusEnabled, d.focusEnabled),
         overlayEnabled: bool(value.overlayEnabled, d.overlayEnabled),
-        overlaySide: value.overlaySide === 'right' ? 'right' : 'left',
+        overlayTasksEnabled: bool(value.overlayTasksEnabled, d.overlayTasksEnabled),
+        overlayTimerEnabled: bool(value.overlayTimerEnabled, d.overlayTimerEnabled),
+        overlayHandle: {
+            // `overlaySide` is the pre-v4 spelling; a backup written then still positions correctly.
+            side: (isObject(value.overlayHandle) ? value.overlayHandle.side : value.overlaySide) === 'right' ? 'right' : 'left',
+            offsetY: ratio(isObject(value.overlayHandle) ? value.overlayHandle.offsetY : undefined, d.overlayHandle.offsetY),
+        },
+        overlayTimer: {
+            x: ratio(isObject(value.overlayTimer) ? value.overlayTimer.x : undefined, d.overlayTimer.x),
+            y: ratio(isObject(value.overlayTimer) ? value.overlayTimer.y : undefined, d.overlayTimer.y),
+        },
         overlayBlockedHosts: Array.isArray(value.overlayBlockedHosts)
             ? value.overlayBlockedHosts.filter((host): host is string => typeof host === 'string' && !!host.trim()).slice(0, 200).map((host) => host.trim().toLowerCase())
             : [],

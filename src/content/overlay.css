@@ -109,8 +109,8 @@
     width: 18px;
     height: 10px;
     border-radius: 3px;
-    cursor: grab;
-    opacity: .5;
+    opacity: .4;
+    pointer-events: none;
     background-image: radial-gradient(currentcolor 1px, transparent 1px);
     background-size: 5px 5px;
     background-position: 1px 1px;
@@ -123,6 +123,7 @@
 }
 
 .handle button {
+    cursor: pointer;
     position: relative;
     display: flex;
     align-items: center;
@@ -356,7 +357,18 @@
     box-shadow: 0 1px 4px rgba(0, 0, 0, .06);
     /* Resting state is muted: a timer you can glance at, not one that pulls your eye back. */
     color: var(--muted);
-    transition: box-shadow .18s ease, background-color .18s ease, color .18s ease, gap .2s ease, padding .2s ease, scale .24s var(--ease-spring);
+    transition: box-shadow .18s ease, background-color .18s ease, color .18s ease, gap .2s ease, padding .2s ease, scale .24s var(--ease-spring), left .22s cubic-bezier(.2, .8, .3, 1), top .22s cubic-bezier(.2, .8, .3, 1);
+    /* Required for pointer drags on touch: without it the browser claims the gesture as a scroll
+       and no pointermove ever reaches us. */
+    touch-action: none;
+    cursor: grab;
+}
+
+/* Mid-drag nothing should ease towards where it already is. */
+.timer[data-dragging],
+.handle[data-dragging] {
+    transition: none;
+    cursor: grabbing;
 }
 
 .timer:hover,

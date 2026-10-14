@@ -7,6 +7,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 minor releases may still change how data is stored — each one documents what happens to your
 existing data when you upgrade.
 
+## [0.3.1] — 2026-10-14
+
+### Fixed
+
+- **The focus timer jumped to the top-left corner between sessions.** Its idle state was drawn
+  without a position, so instead of staying where you had put it, it snapped to the corner as soon
+  as a session ended.
+- **Neither bubble could be dragged by its body.** Only the small dotted grip responded, which is
+  not where anyone reaches first. Both are now draggable from anywhere on them; the grip stays as a
+  visual cue. Buttons inside still work — a press only becomes a drag once the pointer actually
+  travels.
+- **The focus timer could not be moved at all while idle.** It is draggable in every state now;
+  being able to move it only during a session meant fighting it exactly when it was in the way.
+- Restored the setting that lets a touch drag move a bubble instead of scrolling the page.
+
 ## [0.3.0] — 2026-10-13
 
 ### Added
@@ -189,6 +204,7 @@ Initial version: bento dashboard with shortcuts, to-dos, notes, weather, screen 
 cards; an icon rail of side panels; search with suggestions, voice input and `t:` / `b:` / `@`
 commands; a focus timer; themes, accents, wallpapers; and manual backup and restore.
 
+[0.3.1]: https://github.com/adhikari-dikshant/tab-extension/releases/tag/v0.3.1
 [0.3.0]: https://github.com/adhikari-dikshant/tab-extension/releases/tag/v0.3.0
 [0.2.1]: https://github.com/adhikari-dikshant/tab-extension/releases/tag/v0.2.1
 [0.2.0]: https://github.com/adhikari-dikshant/tab-extension/releases/tag/v0.2.0

@@ -87,6 +87,27 @@ export function clampTimer(point: { x: number; y: number }, viewport: Viewport, 
     }
 }
 
+/**
+ * Pixel `left`/`top` for a floating bubble: the live pointer while dragging, the stored ratio
+ * otherwise.
+ *
+ * Exists as its own function because every render path must go through it. `.timer` is
+ * `position: fixed`, so a branch that renders without `left`/`top` does not stay put — it collapses
+ * into the top-left corner. That shipped in 0.3.0, where the idle state was a separate early return
+ * that never received a position.
+ */
+export function resolvePosition(
+    dragPoint: { x: number; y: number } | null,
+    stored: TimerPosition,
+    viewport: Viewport,
+): { left: number; top: number } {
+    if (dragPoint) return { left: dragPoint.x, top: dragPoint.y }
+    return {
+        left: clamp(stored.x, 0, 1) * viewport.width,
+        top: clamp(stored.y, 0, 1) * viewport.height,
+    }
+}
+
 /** Pixel position for a stored handle, for the inline style the overlay applies. */
 export function handleStyle(position: HandlePosition, viewport: Viewport) {
     return { top: clamp(position.offsetY, 0, 1) * viewport.height }

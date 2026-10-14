@@ -11,12 +11,15 @@ export interface DragState {
 /**
  * Pointer-drag for a floating overlay element.
  *
- * Uses pointer capture so the drag survives the pointer crossing an iframe, a video, or any element
- * on the host page that would otherwise swallow the move events — a drag that dies halfway across
- * the window because it passed over an ad frame is the usual way this breaks.
+ * The handlers go on the whole bubble, not on a small grip: a grip means hunting for a 10px target
+ * before anything moves, and the first thing anyone tries is dragging the body. Buttons inside stay
+ * clickable because a press only becomes a drag once the pointer travels past a threshold.
  *
- * `onDrop` receives the final position; nothing is written to storage until then, so dragging does
- * not produce a write per frame.
+ * Pointer capture is taken at that moment rather than on pointer-down, which matters: a captured
+ * pointer sends its `click` to the capturing element, so capturing eagerly would swallow every
+ * click meant for a button inside. Capturing only once a real drag starts keeps plain clicks
+ * untouched, while still letting the drag survive the pointer crossing an iframe, a video, or
+ * anything else on the host page that would otherwise eat the move events.
  */
 export function useDrag(onDrop: (point: { x: number; y: number }) => void) {
     const [state, setState] = useState<DragState>({ dragging: false, point: null })
@@ -28,23 +31,29 @@ export function useDrag(onDrop: (point: { x: number; y: number }) => void) {
     const onPointerDown = useCallback((event: React.PointerEvent) => {
         // Primary button only: a right-click or a middle-click is not a drag.
         if (event.button !== 0) return
-        const target = event.currentTarget as HTMLElement
-        const rect = target.getBoundingClientRect()
+        const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
         grabOffset.current = {
             x: event.clientX - (rect.left + rect.width / 2),
             y: event.clientY - (rect.top + rect.height / 2),
         }
         origin.current = { x: event.clientX, y: event.clientY }
         moved.current = false
-        target.setPointerCapture(event.pointerId)
     }, [])
 
     const onPointerMove = useCallback((event: React.PointerEvent) => {
         const from = origin.current
         if (!from) return
         const here = { x: event.clientX, y: event.clientY }
-        if (!moved.current && !exceededThreshold(from, here)) return
-        moved.current = true
+        if (!moved.current) {
+            if (!exceededThreshold(from, here)) return
+            moved.current = true
+            try {
+                (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+            } catch {
+                // Pointer already gone; the drag still works, it just will not survive leaving the
+                // element, which is better than throwing out of an event handler.
+            }
+        }
         // Stops the host page starting a text selection or its own drag behind the bubble.
         event.preventDefault()
         setState({
@@ -55,7 +64,7 @@ export function useDrag(onDrop: (point: { x: number; y: number }) => void) {
 
     const finish = useCallback((event: React.PointerEvent) => {
         const target = event.currentTarget as HTMLElement
-        if (target.hasPointerCapture(event.pointerId)) target.releasePointerCapture(event.pointerId)
+        if (target.hasPointerCapture?.(event.pointerId)) target.releasePointerCapture(event.pointerId)
         if (moved.current) {
             onDrop({
                 x: event.clientX - grabOffset.current.x,
@@ -66,17 +75,25 @@ export function useDrag(onDrop: (point: { x: number; y: number }) => void) {
         setState({ dragging: false, point: null })
     }, [onDrop])
 
-    /** True for the click immediately following a drag, so the handler can ignore it. */
-    const consumedClick = useCallback(() => moved.current, [])
+    /**
+     * Swallows the click that follows a drag, so releasing over a button does not also press it.
+     * Capture phase, so it runs before the button's own handler.
+     */
+    const onClickCapture = useCallback((event: React.MouseEvent) => {
+        if (!moved.current) return
+        event.preventDefault()
+        event.stopPropagation()
+        moved.current = false
+    }, [])
 
     return {
         ...state,
-        consumedClick,
         handlers: {
             onPointerDown,
             onPointerMove,
             onPointerUp: finish,
             onPointerCancel: finish,
+            onClickCapture,
         },
     }
 }

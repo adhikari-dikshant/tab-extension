@@ -10,7 +10,7 @@ import { DEFAULT_SETTINGS, createNote, createTodo, touch, type Note } from '../l
 import { useStorageValue } from '../lib/useStorageValue'
 import { changeStored, completeTodo, EMPTY_FOCUS, startFocus } from '../lib/productivity'
 import { noteFromPage, taskFromPage } from '../lib/capture'
-import { clampTimer, snapHandleToEdge } from '../lib/overlayPosition'
+import { clampTimer, resolvePosition, snapHandleToEdge } from '../lib/overlayPosition'
 import { useDrag } from './useDrag'
 
 /** Viewport size, tracked so a stored ratio resolves to the right pixels after a window resize. */
@@ -141,7 +141,7 @@ function FocusTimer() {
     const [focus] = useStorageValue('focus', EMPTY_FOCUS)
     const [now, setNow] = useState(Date.now)
     const viewport = useViewport()
-    const element = useRef<HTMLDivElement>(null)
+    const element = useRef<HTMLElement>(null)
     const session = focus.session
 
     const drag = useDrag((point) => {
@@ -156,10 +156,24 @@ function FocusTimer() {
         return () => clearInterval(timer)
     }, [session?.status])
 
+    // Follows the pointer while dragging, then settles wherever it was released. Computed before
+    // the idle branch below: `.timer` is `position: fixed`, so a render without left/top would
+    // collapse into the top-left corner instead of staying where the user put it.
+    const position = resolvePosition(drag.point, settings.overlayTimer, viewport)
+
     // Between sessions it shrinks to a faint icon rather than a timer reading 00:00, which would be
-    // something to look at for no reason.
+    // something to look at for no reason. It stays draggable in that state — being able to move it
+    // only while a session runs would mean fighting it exactly when it is in the way.
     if (!session || session.status === 'finished') {
-        return <button className="timer is-idle" onClick={() => void startFocus(IDLE_FOCUS_MINUTES)} aria-label={`Start a ${IDLE_FOCUS_MINUTES}-minute focus session`}>
+        return <button
+            ref={element as React.RefObject<HTMLButtonElement>}
+            className="timer is-idle"
+            data-dragging={drag.dragging || undefined}
+            style={position as CSSProperties}
+            {...drag.handlers}
+            onClick={() => void startFocus(IDLE_FOCUS_MINUTES)}
+            aria-label={`Start a ${IDLE_FOCUS_MINUTES}-minute focus session`}
+        >
             <TimerIcon size={16} />
             <span className="label">Focus · {IDLE_FOCUS_MINUTES} min</span>
         </button>
@@ -182,21 +196,16 @@ function FocusTimer() {
         }
     })
 
-    // Follows the pointer while dragging, then settles wherever it was released.
-    const position = drag.point
-        ? { left: drag.point.x, top: drag.point.y }
-        : { left: settings.overlayTimer.x * viewport.width, top: settings.overlayTimer.y * viewport.height }
-
     return <div
-        ref={element}
+        ref={element as React.RefObject<HTMLDivElement>}
         className="timer"
         data-mode={session.mode}
         data-dragging={drag.dragging || undefined}
         style={{ '--progress': progress, ...position } as CSSProperties}
+        {...drag.handlers}
         role="status"
         aria-label={`${session.mode === 'break' ? 'Break' : 'Focus'}: ${time} remaining`}
     >
-        <span className="grip" title="Drag to move" aria-hidden="true" {...drag.handlers} />
         <span className="ring" style={{ '--progress': progress } as CSSProperties} aria-hidden="true" />
         <time>{time}</time>
         <span className="label">{session.mode === 'break' ? 'Break' : session.label}</span>
@@ -308,17 +317,20 @@ export default function OverlayPanel() {
                 data-dragging={handleDrag.dragging || undefined}
                 data-free={handleDrag.point ? true : undefined}
                 style={handlePosition as CSSProperties}
+                {...handleDrag.handlers}
             >
-                <span className="grip" title="Drag to move" aria-hidden="true" {...handleDrag.handlers} />
+                {/* A visual cue that the bubble moves. The drag itself works anywhere on it — the
+                    strip is far too small to be the only target. */}
+                <span className="grip" aria-hidden="true" />
                 <button
-                    onClick={() => { if (!handleDrag.consumedClick()) setOpen('todo') }}
+                    onClick={() => setOpen('todo')}
                     aria-label={`Tasks${openCount ? `, ${openCount} open` : ''}`}
                     title="Tasks"
                 >
                     <ChecksIcon size={17} />
                     {openCount > 0 && <span className="count">{openCount > 99 ? '99+' : openCount}</span>}
                 </button>
-                <button onClick={() => { if (!handleDrag.consumedClick()) setOpen('notes') }} aria-label="Note" title="Note">
+                <button onClick={() => setOpen('notes')} aria-label="Note" title="Note">
                     <NotePencilIcon size={17} />
                 </button>
             </div>

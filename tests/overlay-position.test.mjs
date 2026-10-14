@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { snapHandleToEdge, clampTimer, exceededThreshold, DRAG_THRESHOLD_PX } from '../src/lib/overlayPosition.ts'
+import { snapHandleToEdge, clampTimer, resolvePosition, exceededThreshold, DRAG_THRESHOLD_PX } from '../src/lib/overlayPosition.ts'
 
 const VIEW = { width: 1000, height: 800 }
 const HANDLE = 80
@@ -75,4 +75,25 @@ test('nonsense coordinates do not produce a NaN position', () => {
     assert.ok(Number.isFinite(at.offsetY))
     const timer = clampTimer({ x: Number.NaN, y: Number.NaN }, VIEW, { width: 160, height: 36 })
     assert.ok(Number.isFinite(timer.x) && Number.isFinite(timer.y))
+})
+
+test('every render path gets a real position, including between sessions', () => {
+    // 0.3.0 shipped an idle state that rendered with no left/top. `.timer` is position: fixed, so it
+    // collapsed into the top-left corner instead of staying where it had been dropped.
+    const stored = { x: 0.92, y: 0.06 }
+    const resting = resolvePosition(null, stored, VIEW)
+    assert.ok(Number.isFinite(resting.left) && Number.isFinite(resting.top))
+    assert.ok(resting.left > 0 && resting.top > 0, 'a resting bubble is never at the origin')
+    assert.equal(resting.left, 0.92 * VIEW.width)
+
+    // Mid-drag it tracks the pointer exactly rather than the stored ratio.
+    assert.deepEqual(resolvePosition({ x: 321, y: 123 }, stored, VIEW), { left: 321, top: 123 })
+})
+
+test('a corrupt stored ratio still resolves on screen rather than off it', () => {
+    for (const stored of [{ x: -3, y: 9 }, { x: Number.NaN, y: Number.NaN }]) {
+        const at = resolvePosition(null, stored, VIEW)
+        assert.ok(at.left >= 0 && at.left <= VIEW.width, `left ${at.left}`)
+        assert.ok(at.top >= 0 && at.top <= VIEW.height, `top ${at.top}`)
+    }
 })
